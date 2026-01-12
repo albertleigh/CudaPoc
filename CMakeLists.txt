@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 4.1)
 
 # Set CUDA path and architecture BEFORE project()
-set(CUDAToolkit_ROOT "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1")
-set(CMAKE_CUDA_COMPILER "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1/bin/nvcc.exe")
+
 # T400 is compute capability 7.5
 set(CMAKE_CUDA_ARCHITECTURES 75)
 
