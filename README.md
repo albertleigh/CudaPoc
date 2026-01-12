@@ -56,3 +56,6 @@ CMAKE_CUDA_COMPILER = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1/b
 - ncu --nvtx --call-stack --set full -f --export add_cuda.ncu-rep cuda_poc.exe
 - Nsight Compute(ncu) cmd administrator Roofline Chart only:
 - ncu --print-details=all --section SpeedOfLight_RooflineChart cuda_poc.exe
+
+### Sample roofline chart:
+![Roofline Chart](./doc/roofline_chart_1.png)
