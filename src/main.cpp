@@ -102,50 +102,50 @@ int main() {
     cudaError_t error = cudaGetDeviceCount(&deviceCount);
 
     if (error != cudaSuccess) {
-        std::cerr << "CUDA initialization failed!" << std::endl;
-        std::cerr << "Error code: " << error << std::endl;
-        std::cerr << "Error: " << cudaGetErrorString(error) << std::endl;
+        std::cerr << "CUDA initialization failed!" << '\n';
+        std::cerr << "Error code: " << error << '\n';
+        std::cerr << "Error: " << cudaGetErrorString(error) << '\n';
 
         if (error == cudaErrorInsufficientDriver) {
-            std::cerr << "Driver is too old for CUDA 13.1. Please update NVIDIA drivers." << std::endl;
+            std::cerr << "Driver is too old for CUDA 13.1. Please update NVIDIA drivers." << '\n';
         } else if (error == cudaErrorNoDevice) {
-            std::cerr << "No CUDA-capable device found." << std::endl;
+            std::cerr << "No CUDA-capable device found." << '\n';
         } else if (error == cudaErrorNotSupported) {
-            std::cerr << "CUDA operation not supported. Possible driver/runtime mismatch." << std::endl;
+            std::cerr << "CUDA operation not supported. Possible driver/runtime mismatch." << '\n';
         }
         return 1;
     }
 
     if (deviceCount == 0) {
-        std::cerr << "No CUDA-capable devices found!" << std::endl;
+        std::cerr << "No CUDA-capable devices found!" << '\n';
         return 1;
     }
 
-    std::cout << "Found " << deviceCount << " CUDA device(s)" << std::endl;
+    std::cout << "Found " << deviceCount << " CUDA device(s)" << '\n';
 
     // Get device properties
     cudaDeviceProp prop{};
     error = cudaGetDeviceProperties(&prop, 0);
     if (error != cudaSuccess) {
-        std::cerr << "Failed to get device properties: " << cudaGetErrorString(error) << std::endl;
+        std::cerr << "Failed to get device properties: " << cudaGetErrorString(error) << '\n';
         return 1;
     }
 
-    std::cout << "Using device: " << prop.name << std::endl;
-    std::cout << "Compute capability: " << prop.major << "." << prop.minor << std::endl;
-    std::cout << "Total memory: " << prop.totalGlobalMem / (1024 * 1024) << " MB" << std::endl;
-    std::cout << "\n=== Thread/Block Limits ===" << std::endl;
-    std::cout << "Max threads per block: " << prop.maxThreadsPerBlock << std::endl;
+    std::cout << "Using device: " << prop.name << '\n';
+    std::cout << "Compute capability: " << prop.major << "." << prop.minor << '\n';
+    std::cout << "Total memory: " << prop.totalGlobalMem / (1024 * 1024) << " MB" << '\n';
+    std::cout << "\n=== Thread/Block Limits ===" << '\n';
+    std::cout << "Max threads per block: " << prop.maxThreadsPerBlock << '\n';
     std::cout << "Max block dimensions: (" << prop.maxThreadsDim[0] << ", "
-            << prop.maxThreadsDim[1] << ", " << prop.maxThreadsDim[2] << ")" << std::endl;
+            << prop.maxThreadsDim[1] << ", " << prop.maxThreadsDim[2] << ")" << '\n';
     std::cout << "Max grid dimensions: (" << prop.maxGridSize[0] << ", "
-            << prop.maxGridSize[1] << ", " << prop.maxGridSize[2] << ")" << std::endl;
-    std::cout << "Warp size: " << prop.warpSize << std::endl;
-    std::cout << "Max threads per multiprocessor: " << prop.maxThreadsPerMultiProcessor << std::endl;
-    std::cout << "Number of multiprocessors: " << prop.multiProcessorCount << std::endl;
-    std::cout << "Shared memory per block: " << prop.sharedMemPerBlock / 1024 << " KB" << std::endl;
-    std::cout << "Registers per block: " << prop.regsPerBlock << std::endl;
-    std::cout << std::endl;
+            << prop.maxGridSize[1] << ", " << prop.maxGridSize[2] << ")" << '\n';
+    std::cout << "Warp size: " << prop.warpSize << '\n';
+    std::cout << "Max threads per multiprocessor: " << prop.maxThreadsPerMultiProcessor << '\n';
+    std::cout << "Number of multiprocessors: " << prop.multiProcessorCount << '\n';
+    std::cout << "Shared memory per block: " << prop.sharedMemPerBlock / 1024 << " KB" << '\n';
+    std::cout << "Registers per block: " << prop.regsPerBlock << '\n';
+    std::cout << '\n';
 
     testCuda01();
 
