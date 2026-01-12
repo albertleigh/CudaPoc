@@ -67,22 +67,22 @@ void testCuda01() {
         cudaMemcpy(h_c.data(), d_c, size_bytes, cudaMemcpyDeviceToHost);
     }, &config);
 
-    timeKernel("vector_add_max", [&]() {
-        dim3 inner_block_dim(4096);
-        dim3 inner_grid_dim(4096);
-        // === Kernel: vector_add_max ===
-        // Execution time: 2.39379 ms
-        // Grid dimensions: (4096, 1, 1)
-        // Block dimensions: (256, 1, 1)
-        // Total threads: 1048576
-        // GPU memory used: 0 MB
-        // GPU memory free: 3303.55 MB / 4095.69 MB
-        cudaMemcpy(d_a, h_a.data(), size_bytes, cudaMemcpyHostToDevice);
-        cudaMemcpy(d_b, h_b.data(), size_bytes, cudaMemcpyHostToDevice);
-        cudaMemcpy(d_c, h_c.data(), size_bytes, cudaMemcpyHostToDevice);
-        vector_add(d_c, d_a, d_b, SIZE, inner_grid_dim, inner_block_dim);
-        cudaMemcpy(h_c.data(), d_c, size_bytes, cudaMemcpyDeviceToHost);
-    }, &config);
+    // timeKernel("vector_add_max", [&]() {
+    //     dim3 inner_block_dim(4096);
+    //     dim3 inner_grid_dim(4096);
+    //     // === Kernel: vector_add_max ===
+    //     // Execution time: 2.39379 ms
+    //     // Grid dimensions: (4096, 1, 1)
+    //     // Block dimensions: (256, 1, 1)
+    //     // Total threads: 1048576
+    //     // GPU memory used: 0 MB
+    //     // GPU memory free: 3303.55 MB / 4095.69 MB
+    //     cudaMemcpy(d_a, h_a.data(), size_bytes, cudaMemcpyHostToDevice);
+    //     cudaMemcpy(d_b, h_b.data(), size_bytes, cudaMemcpyHostToDevice);
+    //     cudaMemcpy(d_c, h_c.data(), size_bytes, cudaMemcpyHostToDevice);
+    //     vector_add(d_c, d_a, d_b, SIZE, inner_grid_dim, inner_block_dim);
+    //     cudaMemcpy(h_c.data(), d_c, size_bytes, cudaMemcpyDeviceToHost);
+    // }, &config);
 
     if (d_a) {
         CUDA_CHECK(cudaFree(d_a));
