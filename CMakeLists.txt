@@ -14,10 +14,10 @@ find_package(CUDAToolkit REQUIRED)
 
 # T400 is Turing architecture (sm_75)
 
-add_executable(cuda_poc main.cpp add_cuda.cu)
+add_executable(cuda_poc src/main.cpp src/add_cuda.cu)
 
 # Link CUDA libraries
 target_link_libraries(cuda_poc PRIVATE CUDA::cudart)
 
-# Optional: Enable separable compilation if using multiple .cu files
+# Enable separable compilation
 set_target_properties(cuda_poc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
