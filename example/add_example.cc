@@ -1,8 +1,8 @@
 #include <iostream>
 #include <cuda_runtime.h>
 #include <vector>
-#include "cuda_utils.h"
-#include "add_cuda.h"
+#include "cudaPoc/cuda_utils.h"
+#include "cudaPoc/add_cuda.cuh"
 
 const size_t SIZE = 1 << 20; // 4MB
 size_t size_bytes = SIZE * sizeof(float);

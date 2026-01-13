@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 4.1)
 
+set(PROJECT_NAME "CudaPoc")
+
+project(${PROJECT_NAME} VERSION 0.0.1)
+
+add_definitions(-DFMT_HEADER_ONLY=1)
+add_definitions(-DENABLE_LOG=1)
+
 # Set CUDA path and architecture BEFORE project()
 
 # T400 is compute capability 7.5
@@ -9,15 +16,17 @@ project(CudaPoc LANGUAGES CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Find CUDA Toolkit
-find_package(CUDAToolkit REQUIRED)
+# Find fmt
+find_package(fmt CONFIG REQUIRED)
 
-# T400 is Turing architecture (sm_75)
+set(LIBS ${LIBS})
 
-add_executable(cuda_poc src/main.cpp src/add_cuda.cu)
+#set(INCDIRS . ${CMAKE_BINARY_DIR} CudaPoc/src)
+#include_directories(${INCDIRS})
 
-# Link CUDA libraries
-target_link_libraries(cuda_poc PRIVATE CUDA::cudart)
+message(STATUS "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+message(STATUS "CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
 
-# Enable separable compilation
-set_target_properties(cuda_poc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+add_subdirectory(CudaPoc)
+add_subdirectory(example)
+add_subdirectory(test)

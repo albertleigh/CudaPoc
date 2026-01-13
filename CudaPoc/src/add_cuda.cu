@@ -1,3 +1,5 @@
+#include "add_cuda.cuh"
+
 #include <type_traits>
 #include "cuda_fp16.h"
 

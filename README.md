@@ -35,6 +35,23 @@ Set up environment variables like:
 CUDAToolkit_ROOT = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1
 CMAKE_CUDA_COMPILER = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1/bin/nvcc.exe
 
+### vckpkg setup
+git clone https://github.com/microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh
+```bash
+#~/.bashrc
+export PATH="$PATH:/path/to/vcpkg"
+export VCPKG_ROOT=""/path/to/vcpkg"
+```
+- vcpkg list
+- vcpkg install gtest
+
+and set -DCMAKE_TOOLCHAIN_FILE="D:/opt/vcpkg/scripts/buildsystems/vcpkg.cmake"
+
+### Repo init
+vcpkg install
+
 ### handy commands:
 
 - manully compile
