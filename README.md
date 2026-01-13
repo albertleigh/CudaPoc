@@ -36,20 +36,25 @@ CUDAToolkit_ROOT = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1
 CMAKE_CUDA_COMPILER = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1/bin/nvcc.exe
 
 ### vckpkg setup
+
 git clone https://github.com/microsoft/vcpkg.git
 cd vcpkg
 ./bootstrap-vcpkg.sh
+
 ```bash
 #~/.bashrc
 export PATH="$PATH:/path/to/vcpkg"
 export VCPKG_ROOT=""/path/to/vcpkg"
 ```
+
 - vcpkg list
 - vcpkg install gtest
 
-and set -DCMAKE_TOOLCHAIN_FILE="D:/opt/vcpkg/scripts/buildsystems/vcpkg.cmake"
+and set `-DCMAKE_TOOLCHAIN_FILE="D:/opt/vcpkg/scripts/buildsystems/vcpkg.cmake"`
+and set `-DVCPKG_MANIFEST_INSTALL=OFF` if needed
 
 ### Repo init
+
 vcpkg install
 
 ### handy commands:
@@ -75,4 +80,5 @@ vcpkg install
 - ncu --print-details=all --section SpeedOfLight_RooflineChart cuda_poc.exe
 
 ### Sample roofline chart:
+
 ![Roofline Chart](./doc/roofline_chart_1.png)

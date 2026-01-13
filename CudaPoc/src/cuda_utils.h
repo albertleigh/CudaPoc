@@ -5,13 +5,13 @@
 #include <cstdlib>
 #include <functional>
 #include <string>
+#include <fmt/core.h>
 
 #define CUDA_CHECK(call) \
 do { \
     cudaError_t error = call; \
     if (error != cudaSuccess) { \
-        std::cerr << "CUDA error at " << __FILE__ << ":" << __LINE__ \
-                  << " - " << cudaGetErrorString(error) << '\n'; \
+        fmt::println(stderr, "CUDA error at {}:{} - {}", __FILE__, __LINE__, cudaGetErrorString(error)); \
         exit(EXIT_FAILURE); \
     } \
 } while(0)
@@ -51,27 +51,28 @@ inline float timeKernel(const std::string& name, std::function<void()> kernel_fu
     CUDA_CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
     
     // Print detailed info
-    std::cout << "\n=== Kernel: " << name << " ===" << '\n';
-    std::cout << "Execution time: " << milliseconds << " ms" << '\n';
+    fmt::println("\n=== Kernel: {} ===", name);
+    fmt::println("Execution time: {} ms", milliseconds);
     
     if (config) {
-        std::cout << "Grid dimensions: (" << config->gridDim.x << ", " 
-                  << config->gridDim.y << ", " << config->gridDim.z << ")" << '\n';
-        std::cout << "Block dimensions: (" << config->blockDim.x << ", " 
-                  << config->blockDim.y << ", " << config->blockDim.z << ")" << '\n';
+        fmt::println("Grid dimensions: ({}, {}, {})", 
+                  config->gridDim.x, config->gridDim.y, config->gridDim.z);
+        fmt::println("Block dimensions: ({}, {}, {})", 
+                  config->blockDim.x, config->blockDim.y, config->blockDim.z);
         
         size_t totalThreads = config->gridDim.x * config->gridDim.y * config->gridDim.z *
                               config->blockDim.x * config->blockDim.y * config->blockDim.z;
-        std::cout << "Total threads: " << totalThreads << '\n';
+        fmt::println("Total threads: {}", totalThreads);
         
         if (config->sharedMemBytes > 0) {
-            std::cout << "Shared memory: " << config->sharedMemBytes << " bytes" << '\n';
+            fmt::println("Shared memory: {} bytes", config->sharedMemBytes);
         }
     }
     
-    std::cout << "GPU memory used: " << (freeBefore - freeAfter) / (1024.0 * 1024.0) << " MB" << '\n';
-    std::cout << "GPU memory free: " << freeAfter / (1024.0 * 1024.0) << " MB / " 
-              << totalAfter / (1024.0 * 1024.0) << " MB" << '\n';
+    fmt::println("GPU memory used: {} MB", (freeBefore - freeAfter) / (1024.0 * 1024.0));
+    fmt::println("GPU memory free: {} MB / {} MB", 
+              freeAfter / (1024.0 * 1024.0), 
+              totalAfter / (1024.0 * 1024.0));
     
     CUDA_CHECK(cudaEventDestroy(start));
     CUDA_CHECK(cudaEventDestroy(stop));

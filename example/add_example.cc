@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cuda_runtime.h>
 #include <vector>
+#include <fmt/core.h>
 #include "cudaPoc/cuda_utils.h"
 #include "cudaPoc/add_cuda.cuh"
 
@@ -102,50 +103,48 @@ int main() {
     cudaError_t error = cudaGetDeviceCount(&deviceCount);
 
     if (error != cudaSuccess) {
-        std::cerr << "CUDA initialization failed!" << '\n';
-        std::cerr << "Error code: " << error << '\n';
-        std::cerr << "Error: " << cudaGetErrorString(error) << '\n';
+        fmt::println(stderr, "CUDA initialization failed!");
+        fmt::println(stderr, "Error code: {}", static_cast<int>(error));
+        fmt::println(stderr, "Error: {}", cudaGetErrorString(error));
 
         if (error == cudaErrorInsufficientDriver) {
-            std::cerr << "Driver is too old for CUDA 13.1. Please update NVIDIA drivers." << '\n';
+            fmt::println(stderr, "Driver is too old for CUDA 13.1. Please update NVIDIA drivers.");
         } else if (error == cudaErrorNoDevice) {
-            std::cerr << "No CUDA-capable device found." << '\n';
+            fmt::println(stderr, "No CUDA-capable device found.");
         } else if (error == cudaErrorNotSupported) {
-            std::cerr << "CUDA operation not supported. Possible driver/runtime mismatch." << '\n';
+            fmt::println(stderr, "CUDA operation not supported. Possible driver/runtime mismatch.");
         }
         return 1;
     }
 
     if (deviceCount == 0) {
-        std::cerr << "No CUDA-capable devices found!" << '\n';
+        fmt::println(stderr, "No CUDA-capable devices found!");
         return 1;
     }
 
-    std::cout << "Found " << deviceCount << " CUDA device(s)" << '\n';
+    fmt::println("Found {} CUDA device(s)", deviceCount);
 
     // Get device properties
     cudaDeviceProp prop{};
     error = cudaGetDeviceProperties(&prop, 0);
     if (error != cudaSuccess) {
-        std::cerr << "Failed to get device properties: " << cudaGetErrorString(error) << '\n';
+        fmt::println(stderr, "Failed to get device properties: {}", cudaGetErrorString(error));
         return 1;
     }
 
-    std::cout << "Using device: " << prop.name << '\n';
-    std::cout << "Compute capability: " << prop.major << "." << prop.minor << '\n';
-    std::cout << "Total memory: " << prop.totalGlobalMem / (1024 * 1024) << " MB" << '\n';
-    std::cout << "\n=== Thread/Block Limits ===" << '\n';
-    std::cout << "Max threads per block: " << prop.maxThreadsPerBlock << '\n';
-    std::cout << "Max block dimensions: (" << prop.maxThreadsDim[0] << ", "
-            << prop.maxThreadsDim[1] << ", " << prop.maxThreadsDim[2] << ")" << '\n';
-    std::cout << "Max grid dimensions: (" << prop.maxGridSize[0] << ", "
-            << prop.maxGridSize[1] << ", " << prop.maxGridSize[2] << ")" << '\n';
-    std::cout << "Warp size: " << prop.warpSize << '\n';
-    std::cout << "Max threads per multiprocessor: " << prop.maxThreadsPerMultiProcessor << '\n';
-    std::cout << "Number of multiprocessors: " << prop.multiProcessorCount << '\n';
-    std::cout << "Shared memory per block: " << prop.sharedMemPerBlock / 1024 << " KB" << '\n';
-    std::cout << "Registers per block: " << prop.regsPerBlock << '\n';
-    std::cout << '\n';
+    fmt::println("Using device: {}", prop.name);
+    fmt::println("Compute capability: {}.{}", prop.major, prop.minor);
+    fmt::println("Total memory: {} MB", prop.totalGlobalMem / (1024 * 1024));
+    fmt::println("\n=== Thread/Block Limits ===");
+    fmt::println("Max threads per block: {}", prop.maxThreadsPerBlock);
+    fmt::println("Max block dimensions: ({}, {}, {})", prop.maxThreadsDim[0], prop.maxThreadsDim[1], prop.maxThreadsDim[2]);
+    fmt::println("Max grid dimensions: ({}, {}, {})", prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]);
+    fmt::println("Warp size: {}", prop.warpSize);
+    fmt::println("Max threads per multiprocessor: {}", prop.maxThreadsPerMultiProcessor);
+    fmt::println("Number of multiprocessors: {}", prop.multiProcessorCount);
+    fmt::println("Shared memory per block: {} KB", prop.sharedMemPerBlock / 1024);
+    fmt::println("Registers per block: {}", prop.regsPerBlock);
+    fmt::println("");
 
     testCuda01();
 
