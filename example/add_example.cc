@@ -2,8 +2,11 @@
 #include <cuda_runtime.h>
 #include <vector>
 #include <fmt/core.h>
-#include "cudaPoc/cuda_utils.h"
-#include "cudaPoc/add_cuda.cuh"
+
+#include "add_cuda.cuh"
+#include "cuda_utils.h"
+
+using namespace cuda_poc;
 
 const size_t SIZE = 1 << 20; // 4MB
 size_t size_bytes = SIZE * sizeof(float);

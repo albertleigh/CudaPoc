@@ -21,9 +21,6 @@ find_package(fmt CONFIG REQUIRED)
 
 set(LIBS ${LIBS})
 
-#set(INCDIRS . ${CMAKE_BINARY_DIR} CudaPoc/src)
-#include_directories(${INCDIRS})
-
 message(STATUS "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
 
