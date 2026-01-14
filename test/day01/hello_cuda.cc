@@ -26,7 +26,7 @@ namespace cuda_poc::day01
         CUDA_CHECK(cudaMalloc(&d_b, size_bytes));
         CUDA_CHECK(cudaMalloc(&d_c, size_bytes));
 
-        KernelConfig config(grid_dim, block_dim, "vector_add_kernel");
+        KernelConfig config(grid_dim, block_dim);
         timeKernel("vector_add", [&]()
         {
             // === Kernel: vector_add ===

@@ -22,7 +22,7 @@ do { \
         dim3 gridDim;
         dim3 blockDim;
 
-        KernelConfig(dim3 grid, dim3 block, const std::string &name = "", size_t sharedMem = 0)
+        KernelConfig(dim3 grid, dim3 block)
             : gridDim(grid), blockDim(block) {
         }
     };
