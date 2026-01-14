@@ -30,8 +30,8 @@ target_link_libraries(
         PUBLIC
         cudaPoc
         CUDA::cudart
-        fmt::fmt-header-only
         PRIVATE
+        fmt::fmt-header-only
         Threads::Threads
         GTest::gtest
         GTest::gtest_main
