@@ -38,7 +38,7 @@ void testCuda01() {
     // Shared memory per block: 48 KB
     // Registers per block: 65536
 
-    KernelConfig config(grid_dim, block_dim, "vector_add_kernel");
+    KernelConfig config(grid_dim, block_dim);
     timeKernel("vector_add", [&]() {
         // === Kernel: vector_add ===
         // Execution time: 0.328128 ms
@@ -140,7 +140,8 @@ int main() {
     fmt::println("Total memory: {} MB", prop.totalGlobalMem / (1024 * 1024));
     fmt::println("\n=== Thread/Block Limits ===");
     fmt::println("Max threads per block: {}", prop.maxThreadsPerBlock);
-    fmt::println("Max block dimensions: ({}, {}, {})", prop.maxThreadsDim[0], prop.maxThreadsDim[1], prop.maxThreadsDim[2]);
+    fmt::println("Max block dimensions: ({}, {}, {})", prop.maxThreadsDim[0], prop.maxThreadsDim[1],
+                 prop.maxThreadsDim[2]);
     fmt::println("Max grid dimensions: ({}, {}, {})", prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]);
     fmt::println("Warp size: {}", prop.warpSize);
     fmt::println("Max threads per multiprocessor: {}", prop.maxThreadsPerMultiProcessor);

@@ -7,8 +7,7 @@
 #include <string>
 #include <fmt/core.h>
 
-namespace cuda_poc
-{
+namespace cuda_poc {
 #define CUDA_CHECK(call) \
 do { \
     cudaError_t error = call; \
@@ -19,23 +18,18 @@ do { \
 } while(0)
 
     // Structure to hold kernel launch configuration
-    struct KernelConfig
-    {
+    struct KernelConfig {
         dim3 gridDim;
         dim3 blockDim;
-        size_t sharedMemBytes = 0;
-        std::string kernelName;
 
-        KernelConfig(dim3 grid, dim3 block, const std::string& name = "", size_t sharedMem = 0)
-            : gridDim(grid), blockDim(block), sharedMemBytes(sharedMem), kernelName(name)
-        {
+        KernelConfig(dim3 grid, dim3 block, const std::string &name = "", size_t sharedMem = 0)
+            : gridDim(grid), blockDim(block) {
         }
     };
 
     // Enhanced CUDA kernel timing function with detailed info
-    inline float timeKernel(const std::string& name, std::function<void()> kernel_func,
-                            const KernelConfig* config = nullptr)
-    {
+    inline float timeKernel(const std::string &name, std::function<void()> kernel_func,
+                            const KernelConfig *config = nullptr) {
         // Get memory info before kernel
         size_t freeBefore, totalBefore;
         CUDA_CHECK(cudaMemGetInfo(&freeBefore, &totalBefore));
@@ -60,21 +54,15 @@ do { \
         fmt::println("\n=== Kernel: {} ===", name);
         fmt::println("Execution time: {} ms", milliseconds);
 
-        if (config)
-        {
+        if (config) {
             fmt::println("Grid dimensions: ({}, {}, {})",
                          config->gridDim.x, config->gridDim.y, config->gridDim.z);
             fmt::println("Block dimensions: ({}, {}, {})",
                          config->blockDim.x, config->blockDim.y, config->blockDim.z);
 
             size_t totalThreads = config->gridDim.x * config->gridDim.y * config->gridDim.z *
-                config->blockDim.x * config->blockDim.y * config->blockDim.z;
+                                  config->blockDim.x * config->blockDim.y * config->blockDim.z;
             fmt::println("Total threads: {}", totalThreads);
-
-            if (config->sharedMemBytes > 0)
-            {
-                fmt::println("Shared memory: {} bytes", config->sharedMemBytes);
-            }
         }
 
         fmt::println("GPU memory used: {} MB", (freeBefore - freeAfter) / (1024.0 * 1024.0));
@@ -89,8 +77,7 @@ do { \
     }
 
     // Simple version without config info (backwards compatible)
-    inline float timeKernel(const std::string& name, std::function<void()> kernel_func)
-    {
+    inline float timeKernel(const std::string &name, std::function<void()> kernel_func) {
         return timeKernel(name, kernel_func, nullptr);
     }
 } // namespace cuda_poc
