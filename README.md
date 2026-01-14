@@ -79,6 +79,9 @@ vcpkg install
 - Nsight Compute(ncu) cmd administrator Roofline Chart only:
 - ncu --print-details=all --section SpeedOfLight_RooflineChart cuda_poc.exe
 
+- Test gtest (Admin):
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0101.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0101.HelloCuda
+
 ### Sample roofline chart:
 
 ![Roofline Chart](./doc/roofline_chart_1.png)
