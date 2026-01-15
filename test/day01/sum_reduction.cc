@@ -11,7 +11,7 @@ namespace cuda_poc::day01 {
     using namespace cuda_poc;
 
     // === Kernel: sum_reduction_v1 ===
-    // Execution time: 3.318304 ms
+    // Execution time: 3.382688 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
@@ -19,7 +19,7 @@ namespace cuda_poc::day01 {
     // GPU memory free: 3296.25 MB / 4095.5625 MB
     //
     // === Kernel: sum_reduction_v2 ===
-    // Execution time: 1.2512 ms
+    // Execution time: 1.236512 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
@@ -27,7 +27,7 @@ namespace cuda_poc::day01 {
     // GPU memory free: 3292.25 MB / 4095.5625 MB
     //
     // === Kernel: sum_reduction_v3 ===
-    // Execution time: 1.1208 ms
+    // Execution time: 1.15888 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
@@ -35,13 +35,29 @@ namespace cuda_poc::day01 {
     // GPU memory free: 3288.25 MB / 4095.5625 MB
     //
     // === Kernel: sum_reduction_v4 ===
-    // Execution time: 1.845536 ms
+    // Execution time: 1.884512 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
     // GPU memory used: 0 MB
     // GPU memory free: 3284.25 MB / 4095.5625 MB
-    // Process finished with exit code 0
+    //
+    // === Kernel: sum_reduction_v5 ===
+    // Execution time: 1.001088 ms
+    // Grid dimensions: (4096, 1, 1)
+    // Block dimensions: (256, 1, 1)
+    // Total threads: 1048576
+    // GPU memory used: 0 MB
+    // GPU memory free: 3280.25 MB / 4095.5625 MB
+    //
+    // === Kernel: sum_reduction_v6 ===
+    // Execution time: 0.985888 ms
+    // Grid dimensions: (4096, 1, 1)
+    // Block dimensions: (256, 1, 1)
+    // Total threads: 1048576
+    // GPU memory used: 0 MB
+    // GPU memory free: 3276.25 MB / 4095.5625 MB
+
 
     class CudaPoc_Day0301 : public ::testing::Test {
     protected:
@@ -196,6 +212,32 @@ namespace cuda_poc::day01 {
         timeKernel("sum_reduction_v5", [&]() {
             CUDA_CHECK(cudaMemcpy(d_input, h_input.data(), size_bytes, cudaMemcpyHostToDevice));
             vector_sum_v5(d_result, d_input, SIZE, grid_dim, block_dim, wrap_size);
+            CUDA_CHECK(cudaMemcpy(h_result, d_result, sizeof(float), cudaMemcpyDeviceToHost));
+        }, &config);
+
+        EXPECT_EQ(*h_result, SIZE);
+    }
+
+    TEST_F(CudaPoc_Day0301, SumV6) {
+        constexpr size_t SIZE = 1 << 20; // 4MB
+        size_t size_bytes = SIZE * sizeof(float);
+
+        dim3 block_dim(256);
+        dim3 grid_dim((SIZE + block_dim.x - 1) / block_dim.x);
+
+        std::vector<float> h_input(SIZE, 1);
+        float result = 0.0f;
+        float *h_result = &result;
+
+        float *d_input;
+        float *d_result;
+        CUDA_CHECK(cudaMalloc(&d_input, size_bytes));
+        CUDA_CHECK(cudaMalloc(&d_result, sizeof(float)));
+
+        KernelConfig config(grid_dim, block_dim);
+        timeKernel("sum_reduction_v6", [&]() {
+            CUDA_CHECK(cudaMemcpy(d_input, h_input.data(), size_bytes, cudaMemcpyHostToDevice));
+            vector_sum_v6(d_result, d_input, SIZE, grid_dim, block_dim, wrap_size);
             CUDA_CHECK(cudaMemcpy(h_result, d_result, sizeof(float), cudaMemcpyDeviceToHost));
         }, &config);
 

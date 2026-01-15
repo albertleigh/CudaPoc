@@ -144,4 +144,36 @@ namespace cuda_poc {
 
     template void vector_sum_v5<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
                                        unsigned int wrap_size);
+
+
+    template<typename T>
+    __global__ void sum_kernel_v6_intra_wrap_dual_hardware_loop(T *result, const T *input, size_t n,
+                                                                unsigned int wrap_size) {
+        const size_t tid = threadIdx.x;
+        size_t idx = blockIdx.x * blockDim.x + tid;
+
+        T wrap_sum = 0;
+
+        for (size_t i = idx; i < n; i += blockDim.x * gridDim.x) {
+            wrap_sum += input[i];
+        }
+
+        for (int offset = wrap_size / 2; offset > 0; offset >>= 1) {
+            wrap_sum += __shfl_down_sync(0xffffffff, wrap_sum, offset);
+        }
+
+        if (tid % wrap_size == 0) {
+            // Atomically add this wrap's sum to the final output.
+            atomicAdd(result, wrap_sum);
+        }
+    }
+
+    // C++ callable wrapper function
+    template<typename T>
+    void vector_sum_v6(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size) {
+        sum_kernel_v6_intra_wrap_dual_hardware_loop<T><<<grid, block>>>(result, input, n, wrap_size);
+    }
+
+    template void vector_sum_v6<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
+                                       unsigned int wrap_size);
 } //namespace cuda_poc
