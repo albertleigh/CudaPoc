@@ -81,9 +81,35 @@ namespace cuda_poc {
     // C++ callable wrapper function
     template<typename T>
     void vector_sum_v3(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size) {
-        sum_kernel_v2<T><<<grid, block>>>(result, input, n, wrap_size);
+        sum_kernel_v3<T><<<grid, block>>>(result, input, n, wrap_size);
     }
 
     template void vector_sum_v3<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
+                                       unsigned int wrap_size);
+
+    template<typename T>
+    __global__ void sum_kernel_v4(T *result, const T *input, size_t n, unsigned int wrap_size) {
+        const size_t tid = threadIdx.x;
+        size_t idx = blockIdx.x * blockDim.x + tid;
+
+        if (tid == 0) {
+            T wrap_sum = 0;
+            for (size_t i = 0; i < blockDim.x; ++i) {
+                for (size_t j = idx + i; j < n; j += blockDim.x * gridDim.x) {
+                    wrap_sum += input[j];
+                }
+            }
+            // Atomically add this wrap's sum to the final output.
+            atomicAdd(result, wrap_sum);
+        }
+    }
+
+    // C++ callable wrapper function
+    template<typename T>
+    void vector_sum_v4(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size) {
+        sum_kernel_v4<T><<<grid, block>>>(result, input, n, wrap_size);
+    }
+
+    template void vector_sum_v4<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
                                        unsigned int wrap_size);
 } //namespace cuda_poc
