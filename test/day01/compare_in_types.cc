@@ -2,6 +2,7 @@
 // Created by Albert Li on 1/14/2026.
 //
 #include <gtest/gtest.h>
+#include <fmt/format.h>
 #include "add_cuda.cuh"
 #include "cuda_utils.h"
 #include "cuda_fp16.h"

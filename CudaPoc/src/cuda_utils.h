@@ -5,14 +5,13 @@
 #include <cstdlib>
 #include <functional>
 #include <string>
-#include <fmt/core.h>
 
 namespace cuda_poc {
 #define CUDA_CHECK(call) \
 do { \
     cudaError_t error = call; \
     if (error != cudaSuccess) { \
-        fmt::println(stderr, "CUDA error at {}:{} - {}", __FILE__, __LINE__, cudaGetErrorString(error)); \
+        std::cerr<< "CUDA error at "<< __FILE__<< ":"<< __LINE__<< " - "<< cudaGetErrorString(error) << "\n"; \
         exit(EXIT_FAILURE); \
     } \
 } while(0)
@@ -51,24 +50,25 @@ do { \
         CUDA_CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
 
         // Print detailed info
-        fmt::println("\n=== Kernel: {} ===", name);
-        fmt::println("Execution time: {} ms", milliseconds);
+        std::cout << "\n=== Kernel: " << name << " ===\n";
+        std::cout << "Execution time: " << milliseconds << " ms\n";
 
         if (config) {
-            fmt::println("Grid dimensions: ({}, {}, {})",
-                         config->gridDim.x, config->gridDim.y, config->gridDim.z);
-            fmt::println("Block dimensions: ({}, {}, {})",
-                         config->blockDim.x, config->blockDim.y, config->blockDim.z);
+            std::cout << "Grid dimensions: (" << config->gridDim.x << ", "
+                      << config->gridDim.y << ", " << config->gridDim.z << ")\n";
+            std::cout << "Block dimensions: (" << config->blockDim.x << ", "
+                      << config->blockDim.y << ", " << config->blockDim.z << ")\n";
 
             size_t totalThreads = config->gridDim.x * config->gridDim.y * config->gridDim.z *
                                   config->blockDim.x * config->blockDim.y * config->blockDim.z;
-            fmt::println("Total threads: {}", totalThreads);
+            std::cout << "Total threads: " << totalThreads << "\n";
         }
 
-        fmt::println("GPU memory used: {} MB", (freeBefore - freeAfter) / (1024.0 * 1024.0));
-        fmt::println("GPU memory free: {} MB / {} MB",
-                     freeAfter / (1024.0 * 1024.0),
-                     totalAfter / (1024.0 * 1024.0));
+        std::cout << "GPU memory used: "
+                  << (freeBefore - freeAfter) / (1024.0 * 1024.0) << " MB\n";
+        std::cout << "GPU memory free: "
+                  << freeAfter / (1024.0 * 1024.0) << " MB / "
+                  << totalAfter / (1024.0 * 1024.0) << " MB\n";
 
         CUDA_CHECK(cudaEventDestroy(start));
         CUDA_CHECK(cudaEventDestroy(stop));

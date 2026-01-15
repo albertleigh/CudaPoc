@@ -21,9 +21,6 @@ project(CudaPoc LANGUAGES CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Find fmt
-find_package(fmt CONFIG REQUIRED)
-
 set(LIBS ${LIBS})
 
 message(STATUS "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")

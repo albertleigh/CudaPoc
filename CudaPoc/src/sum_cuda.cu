@@ -4,6 +4,8 @@
 
 #include "sum_cuda.cuh"
 
+#include "cuda_utils.h"
+
 namespace cuda_poc {
     template<typename T>
     __global__ void sum_kernel_v1_all_atomic(T *result, const T *input, size_t n) {
@@ -228,5 +230,97 @@ namespace cuda_poc {
     }
 
     template void vector_sum_v7<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
+                                       unsigned int wrap_size);
+
+    template<typename T>
+    __global__ void sum_kernel_v8_shuffle_first_pass(T *intermediate, const T *input, size_t n,
+                                                     unsigned int wrap_size) {
+        extern __shared__ T smem[];
+        size_t tid = threadIdx.x;
+        size_t idx = blockIdx.x * blockDim.x + tid;
+
+        T sum = 0;
+
+        for (size_t i = idx; i < n; i += blockDim.x * gridDim.x) {
+            sum += input[i];
+        }
+
+        T warp_sum = warp_reduce(sum, wrap_size);
+
+        if (tid % wrap_size == 0) {
+            smem[tid / wrap_size] = warp_sum;
+        }
+
+        __syncthreads();
+
+        if (tid < wrap_size) {
+            T block_sum = (tid < (blockDim.x + wrap_size - 1) / wrap_size) ? smem[tid] : T(0);
+            // The magic relies on a specific property of current GPU architectures: The maximum number of threads in a block is 1024.
+            // 1024 / 32 = 32, which means at most 32 warps in a block.
+            // therefore, we can directly use warp_reduce here to reduce within a warp.
+            block_sum = warp_reduce(block_sum, wrap_size);
+            if (tid == 0) {
+                intermediate[blockIdx.x] = block_sum;
+            }
+        }
+    }
+
+    template<typename T>
+    __global__ void sum_kernel_v8_shuffle_second_pass(T *result, const T *intermediate, size_t n,
+                                                      unsigned int wrap_size) {
+        extern __shared__ T smem[];
+        size_t tid = threadIdx.x;
+
+        T sum = 0;
+
+        for (size_t i = tid; i < n; i += blockDim.x) {
+            sum += intermediate[i];
+        }
+
+        T warp_sum = warp_reduce(sum, wrap_size);
+
+        if (tid % wrap_size == 0) {
+            smem[tid / wrap_size] = warp_sum;
+        }
+
+        __syncthreads();
+
+        if (tid < wrap_size) {
+            T block_sum = (tid < (blockDim.x + wrap_size - 1) / wrap_size) ? smem[tid] : T(0);
+            // The magic relies on a specific property of current GPU architectures: The maximum number of threads in a block is 1024.
+            // 1024 / 32 = 32, which means at most 32 warps in a block.
+            // therefore, we can directly use warp_reduce here to reduce within a warp.
+            block_sum = warp_reduce(block_sum, wrap_size);
+            if (tid == 0) {
+                *result += block_sum;
+            }
+        }
+    }
+
+    // C++ callable wrapper function
+    template<typename T>
+    void vector_sum_v8(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size) {
+        // Allocate intermediate buff for block results
+        T *d_intermediate;
+        CUDA_CHECK(cudaMalloc(&d_intermediate, grid.x * sizeof(T)));
+
+        // First pass: reduce within blocks
+        size_t smem_size = ((block.x + wrap_size - 1) / wrap_size) * sizeof(T);
+        sum_kernel_v8_shuffle_first_pass<<<grid, block ,smem_size>>>(d_intermediate, input, n, wrap_size);
+        CUDA_CHECK(cudaGetLastError());
+
+        // Second pass: reduce block results
+        dim3 grid2(1);
+        dim3 block2(min(grid.x, block.x));
+
+        size_t smem_size2 = ((block2.x + wrap_size - 1) / wrap_size) * sizeof(T);
+
+        sum_kernel_v8_shuffle_second_pass<<<grid2, block2 ,smem_size2>>>(result, d_intermediate, grid.x, wrap_size);
+        CUDA_CHECK(cudaGetLastError());
+
+        CUDA_CHECK(cudaFree(d_intermediate));
+    }
+
+    template void vector_sum_v8<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
                                        unsigned int wrap_size);
 } //namespace cuda_poc
