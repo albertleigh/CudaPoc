@@ -9,6 +9,7 @@ find_package(fmt CONFIG REQUIRED)
 set(SRCS
         src/add_cuda.cu
         src/cuda_utils.h
+        src/sum_cuda.cu
 )
 
 message(STATUS "libs ${LIBS} CUDA::cudart")

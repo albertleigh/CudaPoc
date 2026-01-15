@@ -28,7 +28,7 @@ do { \
     };
 
     // Enhanced CUDA kernel timing function with detailed info
-    inline float timeKernel(const std::string &name, std::function<void()> kernel_func,
+    inline float timeKernel(const std::string &name, const std::function<void()> &kernel_func,
                             const KernelConfig *config = nullptr) {
         // Get memory info before kernel
         size_t freeBefore, totalBefore;

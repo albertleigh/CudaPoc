@@ -1,0 +1,12 @@
+//
+// Created by Albert Li on 1/15/2026.
+//
+
+#pragma once
+
+#include <cuda_runtime.h>
+
+namespace cuda_poc {
+    template<typename T>
+    void vector_sum_v1(T *result, T *input, size_t n, dim3 grid, dim3 block);
+} //namespace cuda_poc
