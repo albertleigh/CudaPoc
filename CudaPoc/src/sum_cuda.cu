@@ -52,4 +52,38 @@ namespace cuda_poc {
 
     template void vector_sum_v2<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
                                        unsigned int wrap_size);
+
+    template<typename T>
+    __global__ void sum_kernel_v3(T *result, const T *input, size_t n, unsigned int wrap_size) {
+        const size_t tid = threadIdx.x;
+        // Lane is a thread in a warp of usually 32 threads.
+        unsigned int lane_id = tid % wrap_size;
+
+        if (lane_id == 0) {
+            const size_t step = blockDim.x * gridDim.x;
+            size_t idx = blockIdx.x * blockDim.x + tid;
+            T wrap_sum = 0;
+            const size_t total_elements = ((n - idx) + step - 1) / step;
+
+            for (size_t linera_idx = 0; linera_idx < total_elements * 32; linera_idx++) {
+                const size_t segment = linera_idx / 32;
+                const size_t lane_offset = linera_idx % 32;
+                const size_t input_idx = idx + segment * step + lane_offset;
+                if (input_idx < n) {
+                    wrap_sum += input[input_idx];
+                }
+            }
+            // Atomically add this wrap's sum to the final output.
+            atomicAdd(result, wrap_sum);
+        }
+    }
+
+    // C++ callable wrapper function
+    template<typename T>
+    void vector_sum_v3(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size) {
+        sum_kernel_v2<T><<<grid, block>>>(result, input, n, wrap_size);
+    }
+
+    template void vector_sum_v3<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
+                                       unsigned int wrap_size);
 } //namespace cuda_poc
