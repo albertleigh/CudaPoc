@@ -11,5 +11,5 @@ namespace cuda_poc {
     void vector_sum_v1(T *result, T *input, size_t n, dim3 grid, dim3 block);
 
     template<typename T>
-    void vector_sum_v2(T *result, T *input, size_t n, dim3 grid, dim3 block);
+    void vector_sum_v2(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size);
 } //namespace cuda_poc

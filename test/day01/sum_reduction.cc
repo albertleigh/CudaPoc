@@ -25,7 +25,36 @@ namespace cuda_poc::day01 {
     // GPU memory used: 0 MB
     // GPU memory free: 3296.25 MB / 4095.5625 MB
 
-    TEST(CudaPoc_Day0103, SumV1) {
+    class CudaPoc_Day0301 : public ::testing::Test {
+    protected:
+        static void SetUpTestSuite() {
+            // Check if CUDA is available
+            int deviceCount = 0;
+            cudaError_t error = cudaGetDeviceCount(&deviceCount);
+            if (error != cudaSuccess) {
+                FAIL() << fmt::format("Failed to get device count: {}", cudaGetErrorString(error));
+            }
+
+            fmt::println("Found {} CUDA device(s)", deviceCount);
+
+            // Get device properties
+            cudaDeviceProp prop{};
+            error = cudaGetDeviceProperties(&prop, 0);
+            if (error != cudaSuccess) {
+                FAIL() << fmt::format("Failed to get device properties: {}", cudaGetErrorString(error));
+            }
+
+            CudaPoc_Day0301::wrap_size = prop.warpSize;
+            fmt::println("Set static wrap size to {}", wrap_size);
+        }
+
+        static unsigned int wrap_size;
+    };
+
+    // initialize the static value of CudaPoc_Day0301
+    unsigned int CudaPoc_Day0301::wrap_size = 0;
+
+    TEST_F(CudaPoc_Day0301, SumV1) {
         constexpr size_t SIZE = 1 << 20; // 4MB
         size_t size_bytes = SIZE * sizeof(float);
 
@@ -51,7 +80,7 @@ namespace cuda_poc::day01 {
         EXPECT_EQ(*h_result, SIZE);
     }
 
-    TEST(CudaPoc_Day0103, SumV2) {
+    TEST_F(CudaPoc_Day0301, SumV2) {
         constexpr size_t SIZE = 1 << 20; // 4MB
         size_t size_bytes = SIZE * sizeof(float);
 
@@ -70,7 +99,7 @@ namespace cuda_poc::day01 {
         KernelConfig config(grid_dim, block_dim);
         timeKernel("sum_reduction_v2", [&]() {
             CUDA_CHECK(cudaMemcpy(d_input, h_input.data(), size_bytes, cudaMemcpyHostToDevice));
-            vector_sum_v2(d_result, d_input, SIZE, grid_dim, block_dim);
+            vector_sum_v2(d_result, d_input, SIZE, grid_dim, block_dim, wrap_size);
             CUDA_CHECK(cudaMemcpy(h_result, d_result, sizeof(float), cudaMemcpyDeviceToHost));
         }, &config);
 
