@@ -141,7 +141,8 @@ namespace cuda_poc {
     // C++ callable wrapper function
     template<typename T>
     void vector_sum_v5(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size) {
-        sum_kernel_v5_smem_tree_reduce<T><<<grid, block>>>(result, input, n, wrap_size);
+        size_t smem_size = block.x * sizeof(T);
+        sum_kernel_v5_smem_tree_reduce<T><<<grid, block, smem_size>>>(result, input, n, wrap_size);
     }
 
     template void vector_sum_v5<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
@@ -323,4 +324,10 @@ namespace cuda_poc {
 
     template void vector_sum_v8<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
                                        unsigned int wrap_size);
+
+#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
+__device__ void function_for_cuda9_only() {
+        // Use Hopper-specific features (e.g., TMA, Distributed Shared Memory)
+    }
+#endif
 } //namespace cuda_poc
