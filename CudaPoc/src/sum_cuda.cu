@@ -176,4 +176,57 @@ namespace cuda_poc {
 
     template void vector_sum_v6<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
                                        unsigned int wrap_size);
+
+
+    template<typename T>
+    __device__ T warp_reduce(T val, unsigned int wrap_size) {
+        // suggest compiler unroll the loop
+#pragma unroll
+        for (unsigned int offset = wrap_size / 2; offset > 0; offset >>= 1) {
+            val += __shfl_down_sync(0xffffffff, val, offset);
+        }
+
+        return val;
+    }
+
+    template<typename T>
+    __global__ void sum_kernel_v7_reduce_intra_wrap_shuffle(T *result, const T *input, size_t n,
+                                                            unsigned int wrap_size) {
+        extern __shared__ T smem[];
+        const size_t tid = threadIdx.x;
+        const size_t idx = blockIdx.x * blockDim.x + tid;
+
+        T sum = 0;
+        for (size_t i = idx; i < n; i += blockDim.x * gridDim.x) {
+            sum += input[i];
+        }
+
+        T warp_sum = warp_reduce(sum, wrap_size);
+
+        if (tid % wrap_size == 0) {
+            smem[tid / wrap_size] = warp_sum;
+        }
+
+        __syncthreads();
+
+        if (tid < wrap_size) {
+            T block_sum = (tid < (blockDim.x + wrap_size - 1) / wrap_size) ? smem[tid] : T(0);
+            // The magic relies on a specific property of current GPU architectures: The maximum number of threads in a block is 1024.
+            // 1024 / 32 = 32, which means at most 32 warps in a block.
+            // therefore, we can directly use warp_reduce here to reduce within a warp.
+            block_sum = warp_reduce(block_sum, wrap_size);
+            if (tid == 0) {
+                atomicAdd(result, block_sum);
+            }
+        }
+    }
+
+    // C++ callable wrapper function
+    template<typename T>
+    void vector_sum_v7(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size) {
+        sum_kernel_v7_reduce_intra_wrap_shuffle<T><<<grid, block>>>(result, input, n, wrap_size);
+    }
+
+    template void vector_sum_v7<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
+                                       unsigned int wrap_size);
 } //namespace cuda_poc

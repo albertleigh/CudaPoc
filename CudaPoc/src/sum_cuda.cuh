@@ -24,4 +24,7 @@ namespace cuda_poc {
 
     template<typename T>
     void vector_sum_v6(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size);
+
+    template<typename T>
+    void vector_sum_v7(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size);
 } //namespace cuda_poc
