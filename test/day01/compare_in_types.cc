@@ -53,7 +53,7 @@ namespace cuda_poc::day01 {
     }
 
     // === Kernel: vector_add ===
-    // Execution time: 3.291456 ms
+    // Execution time: 3.329024 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
@@ -62,7 +62,7 @@ namespace cuda_poc::day01 {
     // Size used: 1048576
     //
     // === Kernel: vector_add_in_float2 ===
-    // Execution time: 3.274496 ms
+    // Execution time: 3.239808 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
@@ -71,7 +71,7 @@ namespace cuda_poc::day01 {
     // Size used: 524288
     //
     // === Kernel: vector_add_in_float3 ===
-    // Execution time: 3.292096 ms
+    // Execution time: 3.267872 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
@@ -79,14 +79,32 @@ namespace cuda_poc::day01 {
     // GPU memory free: 3284.25 MB / 4095.5625 MB
     // Size used: 349526
     //
-    // === Kernel: vector_add_in_float3 ===
-    // Execution time: 3.248352 ms
+    // === Kernel: vector_add_in_float4 ===
+    // Execution time: 3.292256 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
     // GPU memory used: 0 MB
     // GPU memory free: 3290.25 MB / 4095.5625 MB
     // Size used: 262144
+    //
+    // === Kernel: vector_add_in_half ===
+    // Execution time: 1.767296 ms
+    // Grid dimensions: (4096, 1, 1)
+    // Block dimensions: (256, 1, 1)
+    // Total threads: 1048576
+    // GPU memory used: 0 MB
+    // GPU memory free: 3296.25 MB / 4095.5625 MB
+    // Size used: 1048576
+    //
+    // === Kernel: vector_add_in_half2 ===
+    // Execution time: 1.799968 ms
+    // Grid dimensions: (4096, 1, 1)
+    // Block dimensions: (256, 1, 1)
+    // Total threads: 1048576
+    // GPU memory used: 0 MB
+    // GPU memory free: 3296.25 MB / 4095.5625 MB
+    // Size used: 524288
     TEST(CudaPoc_Day0103, CompareInTypes) {
         constexpr size_t SIZE = 1 << 20; // 4MB
         size_t size_bytes = SIZE * sizeof(float);
@@ -124,24 +142,25 @@ namespace cuda_poc::day01 {
         // float2
         {
             constexpr size_t SIZE_USED = SIZE / 2;
+            size_t size_bytes_used = SIZE_USED * sizeof(float2);
             std::vector<float2> h_a(SIZE_USED, float2(1, 1));
             std::vector<float2> h_b(SIZE_USED, float2(2, 2));
             std::vector<float2> h_c(SIZE_USED, float2(0, 0));
 
             float2 *d_a, *d_b, *d_c;
-            CUDA_CHECK(cudaMalloc(&d_a, size_bytes));
-            CUDA_CHECK(cudaMalloc(&d_b, size_bytes));
-            CUDA_CHECK(cudaMalloc(&d_c, size_bytes));
+            CUDA_CHECK(cudaMalloc(&d_a, size_bytes_used));
+            CUDA_CHECK(cudaMalloc(&d_b, size_bytes_used));
+            CUDA_CHECK(cudaMalloc(&d_c, size_bytes_used));
 
             KernelConfig config(grid_dim, block_dim);
             timeKernel("vector_add_in_float2", [&]() {
-                CUDA_CHECK(cudaMemcpy(d_a, h_a.data(), size_bytes, cudaMemcpyHostToDevice));
-                CUDA_CHECK(cudaMemcpy(d_b, h_b.data(), size_bytes, cudaMemcpyHostToDevice));
-                CUDA_CHECK(cudaMemcpy(d_c, h_c.data(), size_bytes, cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(d_a, h_a.data(), size_bytes_used, cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(d_b, h_b.data(), size_bytes_used, cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(d_c, h_c.data(), size_bytes_used, cudaMemcpyHostToDevice));
                 vector_add(d_c, d_a, d_b, SIZE_USED, grid_dim, block_dim);
                 CUDA_CHECK(cudaGetLastError());
                 CUDA_CHECK(cudaDeviceSynchronize());
-                CUDA_CHECK(cudaMemcpy(h_c.data(), d_c, size_bytes, cudaMemcpyDeviceToHost));
+                CUDA_CHECK(cudaMemcpy(h_c.data(), d_c, size_bytes_used, cudaMemcpyDeviceToHost));
             }, &config);
             fmt::println("Size used: {}", SIZE_USED);
 
@@ -181,28 +200,88 @@ namespace cuda_poc::day01 {
         // floa4
         {
             constexpr size_t SIZE_USED = SIZE / 4;
+            size_t size_bytes_used = SIZE_USED * sizeof(float4);
             std::vector<float4> h_a(SIZE_USED, float4(1, 1, 1, 1));
             std::vector<float4> h_b(SIZE_USED, float4(2, 2, 2, 2));
             std::vector<float4> h_c(SIZE_USED, float4(0, 0, 0, 0));
 
             float4 *d_a, *d_b, *d_c;
-            CUDA_CHECK(cudaMalloc(&d_a, size_bytes));
-            CUDA_CHECK(cudaMalloc(&d_b, size_bytes));
-            CUDA_CHECK(cudaMalloc(&d_c, size_bytes));
+            CUDA_CHECK(cudaMalloc(&d_a, size_bytes_used));
+            CUDA_CHECK(cudaMalloc(&d_b, size_bytes_used));
+            CUDA_CHECK(cudaMalloc(&d_c, size_bytes_used));
 
             KernelConfig config(grid_dim, block_dim);
-            timeKernel("vector_add_in_float3", [&]() {
-                CUDA_CHECK(cudaMemcpy(d_a, h_a.data(), size_bytes, cudaMemcpyHostToDevice));
-                CUDA_CHECK(cudaMemcpy(d_b, h_b.data(), size_bytes, cudaMemcpyHostToDevice));
-                CUDA_CHECK(cudaMemcpy(d_c, h_c.data(), size_bytes, cudaMemcpyHostToDevice));
+            timeKernel("vector_add_in_float4", [&]() {
+                CUDA_CHECK(cudaMemcpy(d_a, h_a.data(), size_bytes_used, cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(d_b, h_b.data(), size_bytes_used, cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(d_c, h_c.data(), size_bytes_used, cudaMemcpyHostToDevice));
                 vector_add(d_c, d_a, d_b, SIZE_USED, grid_dim, block_dim);
                 CUDA_CHECK(cudaGetLastError());
                 CUDA_CHECK(cudaDeviceSynchronize());
-                CUDA_CHECK(cudaMemcpy(h_c.data(), d_c, size_bytes, cudaMemcpyDeviceToHost));
+                CUDA_CHECK(cudaMemcpy(h_c.data(), d_c, size_bytes_used, cudaMemcpyDeviceToHost));
             }, &config);
             fmt::println("Size used: {}", SIZE_USED);
 
             assert_vector_equal(h_c, SIZE_USED, float4(3, 3, 3, 3));
+            free_device_ptr(d_a, d_b, d_c);
+        }
+
+        // half
+        {
+            constexpr size_t SIZE_USED = SIZE;
+            size_t size_bytes_used = SIZE_USED * sizeof(half);
+
+            std::vector<half> h_a(SIZE_USED, 1);
+            std::vector<half> h_b(SIZE_USED, 2);
+            std::vector<half> h_c(SIZE_USED, 0);
+
+            half *d_a, *d_b, *d_c;
+            CUDA_CHECK(cudaMalloc(&d_a, size_bytes_used));
+            CUDA_CHECK(cudaMalloc(&d_b, size_bytes_used));
+            CUDA_CHECK(cudaMalloc(&d_c, size_bytes_used));
+
+            KernelConfig config(grid_dim, block_dim);
+            timeKernel("vector_add_in_half", [&]() {
+                CUDA_CHECK(cudaMemcpy(d_a, h_a.data(), size_bytes_used, cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(d_b, h_b.data(), size_bytes_used, cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(d_c, h_c.data(), size_bytes_used, cudaMemcpyHostToDevice));
+                vector_add(d_c, d_a, d_b, SIZE, grid_dim, block_dim);
+                CUDA_CHECK(cudaGetLastError());
+                CUDA_CHECK(cudaDeviceSynchronize());
+                CUDA_CHECK(cudaMemcpy(h_c.data(), d_c, size_bytes_used, cudaMemcpyDeviceToHost));
+            }, &config);
+            fmt::println("Size used: {}", SIZE_USED);
+
+            assert_vector_equal(h_c, SIZE_USED, half(3.0f));
+            free_device_ptr(d_a, d_b, d_c);
+        }
+
+        // half2
+        {
+            constexpr size_t SIZE_USED = SIZE / 2;
+            size_t size_bytes_used = SIZE_USED * sizeof(half2);
+            std::vector<half2> h_a(SIZE_USED, half2(1, 1));
+            std::vector<half2> h_b(SIZE_USED, half2(2, 2));
+            std::vector<half2> h_c(SIZE_USED, half2(0, 0));
+
+            half2 *d_a, *d_b, *d_c;
+            CUDA_CHECK(cudaMalloc(&d_a, size_bytes_used));
+            CUDA_CHECK(cudaMalloc(&d_b, size_bytes_used));
+            CUDA_CHECK(cudaMalloc(&d_c, size_bytes_used));
+
+            KernelConfig config(grid_dim, block_dim);
+            timeKernel("vector_add_in_half2", [&]() {
+                CUDA_CHECK(cudaMemcpy(d_a, h_a.data(), size_bytes_used, cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(d_b, h_b.data(), size_bytes_used, cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(d_c, h_c.data(), size_bytes_used, cudaMemcpyHostToDevice));
+                vector_add(d_c, d_a, d_b, SIZE_USED, grid_dim, block_dim);
+                CUDA_CHECK(cudaGetLastError());
+                CUDA_CHECK(cudaDeviceSynchronize());
+                CUDA_CHECK(cudaMemcpy(h_c.data(), d_c, size_bytes_used, cudaMemcpyDeviceToHost));
+            }, &config);
+            fmt::println("Size used: {}", SIZE_USED);
+
+            assert_vector_equal(h_c, SIZE_USED, half2(3, 3));
             free_device_ptr(d_a, d_b, d_c);
         }
     }
