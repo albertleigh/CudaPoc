@@ -1,8 +1,12 @@
 #include <iostream>
 #include <cuda_runtime.h>
 #include <vector>
+#include <fmt/core.h>
+
+#include "add_cuda.cuh"
 #include "cuda_utils.h"
-#include "add_cuda.h"
+
+using namespace cuda_poc;
 
 const size_t SIZE = 1 << 20; // 4MB
 size_t size_bytes = SIZE * sizeof(float);
@@ -34,7 +38,7 @@ void testCuda01() {
     // Shared memory per block: 48 KB
     // Registers per block: 65536
 
-    KernelConfig config(grid_dim, block_dim, "vector_add_kernel");
+    KernelConfig config(grid_dim, block_dim);
     timeKernel("vector_add", [&]() {
         // === Kernel: vector_add ===
         // Execution time: 0.328128 ms
@@ -67,22 +71,22 @@ void testCuda01() {
         cudaMemcpy(h_c.data(), d_c, size_bytes, cudaMemcpyDeviceToHost);
     }, &config);
 
-    timeKernel("vector_add_max", [&]() {
-        dim3 inner_block_dim(4096);
-        dim3 inner_grid_dim(4096);
-        // === Kernel: vector_add_max ===
-        // Execution time: 2.39379 ms
-        // Grid dimensions: (4096, 1, 1)
-        // Block dimensions: (256, 1, 1)
-        // Total threads: 1048576
-        // GPU memory used: 0 MB
-        // GPU memory free: 3303.55 MB / 4095.69 MB
-        cudaMemcpy(d_a, h_a.data(), size_bytes, cudaMemcpyHostToDevice);
-        cudaMemcpy(d_b, h_b.data(), size_bytes, cudaMemcpyHostToDevice);
-        cudaMemcpy(d_c, h_c.data(), size_bytes, cudaMemcpyHostToDevice);
-        vector_add(d_c, d_a, d_b, SIZE, inner_grid_dim, inner_block_dim);
-        cudaMemcpy(h_c.data(), d_c, size_bytes, cudaMemcpyDeviceToHost);
-    }, &config);
+    // timeKernel("vector_add_max", [&]() {
+    //     dim3 inner_block_dim(4096);
+    //     dim3 inner_grid_dim(4096);
+    //     // === Kernel: vector_add_max ===
+    //     // Execution time: 2.39379 ms
+    //     // Grid dimensions: (4096, 1, 1)
+    //     // Block dimensions: (256, 1, 1)
+    //     // Total threads: 1048576
+    //     // GPU memory used: 0 MB
+    //     // GPU memory free: 3303.55 MB / 4095.69 MB
+    //     cudaMemcpy(d_a, h_a.data(), size_bytes, cudaMemcpyHostToDevice);
+    //     cudaMemcpy(d_b, h_b.data(), size_bytes, cudaMemcpyHostToDevice);
+    //     cudaMemcpy(d_c, h_c.data(), size_bytes, cudaMemcpyHostToDevice);
+    //     vector_add(d_c, d_a, d_b, SIZE, inner_grid_dim, inner_block_dim);
+    //     cudaMemcpy(h_c.data(), d_c, size_bytes, cudaMemcpyDeviceToHost);
+    // }, &config);
 
     if (d_a) {
         CUDA_CHECK(cudaFree(d_a));
@@ -102,50 +106,49 @@ int main() {
     cudaError_t error = cudaGetDeviceCount(&deviceCount);
 
     if (error != cudaSuccess) {
-        std::cerr << "CUDA initialization failed!" << std::endl;
-        std::cerr << "Error code: " << error << std::endl;
-        std::cerr << "Error: " << cudaGetErrorString(error) << std::endl;
+        fmt::println(stderr, "CUDA initialization failed!");
+        fmt::println(stderr, "Error code: {}", static_cast<int>(error));
+        fmt::println(stderr, "Error: {}", cudaGetErrorString(error));
 
         if (error == cudaErrorInsufficientDriver) {
-            std::cerr << "Driver is too old for CUDA 13.1. Please update NVIDIA drivers." << std::endl;
+            fmt::println(stderr, "Driver is too old for CUDA 13.1. Please update NVIDIA drivers.");
         } else if (error == cudaErrorNoDevice) {
-            std::cerr << "No CUDA-capable device found." << std::endl;
+            fmt::println(stderr, "No CUDA-capable device found.");
         } else if (error == cudaErrorNotSupported) {
-            std::cerr << "CUDA operation not supported. Possible driver/runtime mismatch." << std::endl;
+            fmt::println(stderr, "CUDA operation not supported. Possible driver/runtime mismatch.");
         }
         return 1;
     }
 
     if (deviceCount == 0) {
-        std::cerr << "No CUDA-capable devices found!" << std::endl;
+        fmt::println(stderr, "No CUDA-capable devices found!");
         return 1;
     }
 
-    std::cout << "Found " << deviceCount << " CUDA device(s)" << std::endl;
+    fmt::println("Found {} CUDA device(s)", deviceCount);
 
     // Get device properties
     cudaDeviceProp prop{};
     error = cudaGetDeviceProperties(&prop, 0);
     if (error != cudaSuccess) {
-        std::cerr << "Failed to get device properties: " << cudaGetErrorString(error) << std::endl;
+        fmt::println(stderr, "Failed to get device properties: {}", cudaGetErrorString(error));
         return 1;
     }
 
-    std::cout << "Using device: " << prop.name << std::endl;
-    std::cout << "Compute capability: " << prop.major << "." << prop.minor << std::endl;
-    std::cout << "Total memory: " << prop.totalGlobalMem / (1024 * 1024) << " MB" << std::endl;
-    std::cout << "\n=== Thread/Block Limits ===" << std::endl;
-    std::cout << "Max threads per block: " << prop.maxThreadsPerBlock << std::endl;
-    std::cout << "Max block dimensions: (" << prop.maxThreadsDim[0] << ", "
-            << prop.maxThreadsDim[1] << ", " << prop.maxThreadsDim[2] << ")" << std::endl;
-    std::cout << "Max grid dimensions: (" << prop.maxGridSize[0] << ", "
-            << prop.maxGridSize[1] << ", " << prop.maxGridSize[2] << ")" << std::endl;
-    std::cout << "Warp size: " << prop.warpSize << std::endl;
-    std::cout << "Max threads per multiprocessor: " << prop.maxThreadsPerMultiProcessor << std::endl;
-    std::cout << "Number of multiprocessors: " << prop.multiProcessorCount << std::endl;
-    std::cout << "Shared memory per block: " << prop.sharedMemPerBlock / 1024 << " KB" << std::endl;
-    std::cout << "Registers per block: " << prop.regsPerBlock << std::endl;
-    std::cout << std::endl;
+    fmt::println("Using device: {}", prop.name);
+    fmt::println("Compute capability: {}.{}", prop.major, prop.minor);
+    fmt::println("Total memory: {} MB", prop.totalGlobalMem / (1024 * 1024));
+    fmt::println("\n=== Thread/Block Limits ===");
+    fmt::println("Max threads per block: {}", prop.maxThreadsPerBlock);
+    fmt::println("Max block dimensions: ({}, {}, {})", prop.maxThreadsDim[0], prop.maxThreadsDim[1],
+                 prop.maxThreadsDim[2]);
+    fmt::println("Max grid dimensions: ({}, {}, {})", prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]);
+    fmt::println("Warp size: {}", prop.warpSize);
+    fmt::println("Max threads per multiprocessor: {}", prop.maxThreadsPerMultiProcessor);
+    fmt::println("Number of multiprocessors: {}", prop.multiProcessorCount);
+    fmt::println("Shared memory per block: {} KB", prop.sharedMemPerBlock / 1024);
+    fmt::println("Registers per block: {}", prop.regsPerBlock);
+    fmt::println("");
 
     testCuda01();
 
