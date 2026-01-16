@@ -1,6 +1,6 @@
 {
     "cmake.configureOnOpen": true,
-    "cmake.configureOnEdit": true,
+    "cmake.configureOnEdit": false,
     "cmake.buildDirectory": "${workspaceFolder}/cmake-build-debug",
     "cmake.generator": "Ninja",
     "cmake.buildType": "Debug",
