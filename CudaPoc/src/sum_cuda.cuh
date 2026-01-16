@@ -3,7 +3,7 @@
 //
 
 #pragma once
-
+#include <cuda.h>
 #include <cuda_runtime.h>
 
 namespace cuda_poc {
@@ -30,4 +30,9 @@ namespace cuda_poc {
 
     template<typename T>
     void vector_sum_v8(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size);
+
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 900)
+    template<typename T>
+    void vector_sum_v9(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size);
+#endif
 } //namespace cuda_poc

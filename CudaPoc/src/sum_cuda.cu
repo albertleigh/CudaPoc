@@ -1,12 +1,17 @@
 //
 // Created by Albert Li on 1/15/2026.
 //
-
 #include "sum_cuda.cuh"
-
+#include <filesystem>
 #include "cuda_utils.h"
 
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 900)
+#include <cooperative_groups.h>
+#endif
+
 namespace cuda_poc {
+    namespace cg = cooperative_groups;
+
     template<typename T>
     __global__ void sum_kernel_v1_all_atomic(T *result, const T *input, size_t n) {
         size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -325,9 +330,118 @@ namespace cuda_poc {
     template void vector_sum_v8<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
                                        unsigned int wrap_size);
 
-#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
-__device__ void function_for_cuda9_only() {
-        // Use Hopper-specific features (e.g., TMA, Distributed Shared Memory)
+
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 900)
+    template<typename T>
+    __global__ void sum_kernel_v9_reduce_cooperative(T *output, const T *input, size_t n, unsigned int wrap_size) {
+        extern __shared__ __align__(sizeof(T)) unsigned char shared_mem_raw[];
+        T *coop_smem = reinterpret_cast<T *>(shared_mem_raw);
+
+        cg::grid_group grid = cg::this_grid();
+        // Replace with __syncthreads
+        // cg::thread_block block = cg::this_thread_block();
+        size_t tid = threadIdx.x;
+        size_t idx = blockIdx.x * blockDim.x + tid;
+
+        // Block-level reduction
+        T sum = 0;
+        for (size_t i = idx; i < n; i += blockDim.x * gridDim.x) {
+            sum += input[i];
+        }
+
+        T warp_sum = warp_reduce(sum, wrap_size);
+
+        if (tid % wrap_size == 0) {
+            coop_smem[tid / wrap_size] = warp_sum;
+        }
+
+        // block.sync();
+        __syncthreads(); // equivalent to block.sync()
+
+        if (tid < 32) {
+            T block_sum = (tid < (blockDim.x + wrap_size - 1) / wrap_size) ? coop_smem[tid] : T(0);
+            block_sum = warp_reduce(block_sum, wrap_size);
+            if (tid == 0) {
+                output[blockIdx.x] = block_sum;
+            }
+        }
+
+        // Global synchronization
+        grid.sync();
+
+        if (blockIdx.x == 0) {
+            T final_sum = 0;
+            for (size_t i = tid; i < gridDim.x; i += blockDim.x) {
+                final_sum += output[i];
+            }
+            T wrap_val = warp_reduce(final_sum, wrap_size);
+
+            if (tid % wrap_size == 0) {
+                coop_smem[tid / wrap_size] = wrap_val;
+            }
+
+            // block.sync();
+            __syncthreads();
+
+            if (tid < 32) {
+                T v = (tid < (blockDim.x + wrap_size - 1) / wrap_size) ? coop_smem[tid] : T(0);
+                T total = warp_reduce(v, wrap_size);
+                if (tid == 0) {
+                    output[0] = total;
+                }
+            }
+        }
     }
+
+    // C++ callable wrapper function
+    template<typename T>
+    void vector_sum_v9(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size) {
+        cudaDeviceProp props{};
+        CUDA_CHECK(cudaGetDeviceProperties(&props, 0));
+
+        int grid_size = 0;
+        int block_size = block.x;
+        size_t smem_size = (block.x + wrap_size - 1) / wrap_size * sizeof(T);
+
+        CUDA_CHECK(
+            cudaOccupancyMaxActiveBlocksPerMultiprocessor(&grid_size, sum_kernel_v9_reduce_cooperative<T>, block_size,
+                smem_size));
+
+        grid_size *= props.multiProcessorCount;
+        grid_size = min(grid_size, static_cast<int>((n + block_size - 1) / block_size));
+        grid_size = max(grid_size, 1);
+
+        int can_lanch = 0;
+        CUDA_CHECK(cudaDeviceGetAttribute(&can_lanch, cudaDevAttrCooperativeLaunch, 0));
+
+        if (!can_lanch) {
+            std::cerr << "CUDA device does not support cooperative launch" << '\n';
+            exit(EXIT_FAILURE);
+        }
+
+        T *d_partial;
+        CUDA_CHECK(cudaMalloc(&d_partial, grid_size * sizeof(T)));
+
+
+        void *kernelArgs[] = {&d_partial, &input, &n, &wrap_size};
+
+        CUDA_CHECK(cudaLaunchCooperativeKernel(
+            (void *) sum_kernel_v9_reduce_cooperative<T>,
+            grid_size,
+            block,
+            kernelArgs,
+            smem_size,
+            0
+        ));
+
+        CUDA_CHECK(cudaMemcpy(result, d_partial, sizeof(T), cudaMemcpyDeviceToHost));
+
+        if (d_partial != nullptr) {
+            CUDA_CHECK(cudaFree(d_partial));
+        }
+    }
+
+    template void vector_sum_v9<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
+                                       unsigned int wrap_size);
 #endif
 } //namespace cuda_poc

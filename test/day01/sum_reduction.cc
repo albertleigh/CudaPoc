@@ -12,61 +12,76 @@ namespace cuda_poc::day01 {
     using namespace cuda_poc;
 
     // === Kernel: sum_reduction_v1 ===
-    // Execution time: 3.226624 ms
+    // Execution time: 3.63133 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
-    // GPU memory used: 0 MB
-    // GPU memory free: 3296.25 MB / 4095.5625 MB
+    // GPU memory used: 2 MB
+    // GPU memory free: 3294.25 MB / 4095.56 MB
     //
     // === Kernel: sum_reduction_v2 ===
-    // Execution time: 1.235136 ms
+    // Execution time: 1.29712 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
     // GPU memory used: 0 MB
-    // GPU memory free: 3292.25 MB / 4095.5625 MB
+    // GPU memory free: 3294.25 MB / 4095.56 MB
     //
     // === Kernel: sum_reduction_v3 ===
-    // Execution time: 1.222592 ms
+    // Execution time: 1.18957 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
     // GPU memory used: 0 MB
-    // GPU memory free: 3288.25 MB / 4095.5625 MB
+    // GPU memory free: 3294.25 MB / 4095.56 MB
     //
     // === Kernel: sum_reduction_v4 ===
-    // Execution time: 1.82576 ms
+    // Execution time: 1.91325 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
     // GPU memory used: 0 MB
-    // GPU memory free: 3284.25 MB / 4095.5625 MB
+    // GPU memory free: 3294.25 MB / 4095.56 MB
     //
     // === Kernel: sum_reduction_v5 ===
-    // Execution time: 0.994336 ms
+    // Execution time: 1.05277 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
     // GPU memory used: 0 MB
-    // GPU memory free: 3280.25 MB / 4095.5625 MB
+    // GPU memory free: 3294.25 MB / 4095.56 MB
     //
     // === Kernel: sum_reduction_v6 ===
-    // Execution time: 0.954336 ms
+    // Execution time: 1.01827 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
     // GPU memory used: 0 MB
-    // GPU memory free: 3276.25 MB / 4095.5625 MB
+    // GPU memory free: 3294.25 MB / 4095.56 MB
     //
     // === Kernel: sum_reduction_v7 ===
-    // Execution time: 0.954208 ms
+    // Execution time: 1.03414 ms
     // Grid dimensions: (4096, 1, 1)
     // Block dimensions: (256, 1, 1)
     // Total threads: 1048576
     // GPU memory used: 0 MB
-    // GPU memory free: 3272.25 MB / 4095.5625 MB
-
+    // GPU memory free: 3294.25 MB / 4095.56 MB
+    //
+    // === Kernel: sum_reduction_v8 ===
+    // Execution time: 1.09549 ms
+    // Grid dimensions: (4096, 1, 1)
+    // Block dimensions: (256, 1, 1)
+    // Total threads: 1048576
+    // GPU memory used: 0 MB
+    // GPU memory free: 3294.25 MB / 4095.56 MB
+    //
+    // === Kernel: sum_reduction_v9 ===
+    // Execution time: 0.994528 ms
+    // Grid dimensions: (4096, 1, 1)
+    // Block dimensions: (256, 1, 1)
+    // Total threads: 1048576
+    // GPU memory used: 0 MB
+    // GPU memory free: 3294.25 MB / 4095.56 MB
 
     class CudaPoc_Day0301 : public ::testing::Test {
     protected:
@@ -97,6 +112,11 @@ namespace cuda_poc::day01 {
     // initialize the static value of CudaPoc_Day0301
     unsigned int CudaPoc_Day0301::wrap_size = 0;
 
+    void free_device_memory(float *d_input, float *d_result) {
+        if (d_input) { CUDA_CHECK(cudaFree(d_input)); }
+        if (d_result) { CUDA_CHECK(cudaFree(d_result)); }
+    }
+
     TEST_F(CudaPoc_Day0301, SumV1) {
         constexpr size_t SIZE = 1 << 20; // 4MB
         size_t size_bytes = SIZE * sizeof(float);
@@ -121,6 +141,7 @@ namespace cuda_poc::day01 {
         }, &config);
 
         EXPECT_EQ(*h_result, SIZE);
+        free_device_memory(d_input, d_result);
     }
 
     TEST_F(CudaPoc_Day0301, SumV2) {
@@ -147,6 +168,7 @@ namespace cuda_poc::day01 {
         }, &config);
 
         EXPECT_EQ(*h_result, SIZE);
+        free_device_memory(d_input, d_result);
     }
 
     TEST_F(CudaPoc_Day0301, SumV3) {
@@ -173,6 +195,7 @@ namespace cuda_poc::day01 {
         }, &config);
 
         EXPECT_EQ(*h_result, SIZE);
+        free_device_memory(d_input, d_result);
     }
 
     TEST_F(CudaPoc_Day0301, SumV4) {
@@ -199,6 +222,7 @@ namespace cuda_poc::day01 {
         }, &config);
 
         EXPECT_EQ(*h_result, SIZE);
+        free_device_memory(d_input, d_result);
     }
 
     TEST_F(CudaPoc_Day0301, SumV5) {
@@ -225,6 +249,7 @@ namespace cuda_poc::day01 {
         }, &config);
 
         EXPECT_EQ(*h_result, SIZE);
+        free_device_memory(d_input, d_result);
     }
 
     TEST_F(CudaPoc_Day0301, SumV6) {
@@ -251,6 +276,7 @@ namespace cuda_poc::day01 {
         }, &config);
 
         EXPECT_EQ(*h_result, SIZE);
+        free_device_memory(d_input, d_result);
     }
 
     TEST_F(CudaPoc_Day0301, SumV7) {
@@ -277,6 +303,7 @@ namespace cuda_poc::day01 {
         }, &config);
 
         EXPECT_EQ(*h_result, SIZE);
+        free_device_memory(d_input, d_result);
     }
 
     TEST_F(CudaPoc_Day0301, SumV8) {
@@ -303,5 +330,35 @@ namespace cuda_poc::day01 {
         }, &config);
 
         EXPECT_EQ(*h_result, SIZE);
+        free_device_memory(d_input, d_result);
     }
+
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 900)
+    TEST_F(CudaPoc_Day0301, SumV9) {
+        constexpr size_t SIZE = 1 << 20; // 4MB
+        size_t size_bytes = SIZE * sizeof(float);
+
+        dim3 block_dim(256);
+        dim3 grid_dim((SIZE + block_dim.x - 1) / block_dim.x);
+
+        std::vector<float> h_input(SIZE, 1);
+        float result = 0.0f;
+        float *h_result = &result;
+
+        float *d_input;
+        float *d_result;
+        CUDA_CHECK(cudaMalloc(&d_input, size_bytes));
+        CUDA_CHECK(cudaMalloc(&d_result, sizeof(float)));
+
+        KernelConfig config(grid_dim, block_dim);
+        timeKernel("sum_reduction_v9", [&]() {
+            CUDA_CHECK(cudaMemcpy(d_input, h_input.data(), size_bytes, cudaMemcpyHostToDevice));
+            vector_sum_v9(d_result, d_input, SIZE, grid_dim, block_dim, wrap_size);
+            CUDA_CHECK(cudaMemcpy(h_result, d_result, sizeof(float), cudaMemcpyDeviceToHost));
+        }, &config);
+
+        EXPECT_EQ(*h_result, SIZE);
+        free_device_memory(d_input, d_result);
+    }
+#endif
 } // namespace cuda_poc::day01
