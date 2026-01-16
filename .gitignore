@@ -3,6 +3,7 @@ build/
 !build/.gitkeep
 
 # CMake generated files
+cmake-build-debug
 CMakeCache.txt
 CMakeFiles/
 CMakeScripts/
