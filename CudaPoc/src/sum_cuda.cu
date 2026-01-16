@@ -334,6 +334,7 @@ namespace cuda_poc {
 #if defined(CUDA_VERSION) && (CUDA_VERSION >= 900)
     template<typename T>
     __global__ void sum_kernel_v9_reduce_cooperative(T *output, const T *input, size_t n, unsigned int wrap_size) {
+        // (block_size + wrap_size -1) / wrap_size * sizeof(T);
         extern __shared__ __align__(sizeof(T)) unsigned char shared_mem_raw[];
         T *coop_smem = reinterpret_cast<T *>(shared_mem_raw);
 
@@ -358,10 +359,11 @@ namespace cuda_poc {
         // block.sync();
         __syncthreads(); // equivalent to block.sync()
 
-        if (tid < 32) {
+        if (tid < wrap_size) {
             T block_sum = (tid < (blockDim.x + wrap_size - 1) / wrap_size) ? coop_smem[tid] : T(0);
             block_sum = warp_reduce(block_sum, wrap_size);
             if (tid == 0) {
+                // grid_size * sizeof(T)
                 output[blockIdx.x] = block_sum;
             }
         }
@@ -377,13 +379,14 @@ namespace cuda_poc {
             T wrap_val = warp_reduce(final_sum, wrap_size);
 
             if (tid % wrap_size == 0) {
+                // coop_sem should be larger than wrap_size * sizeof(T)
                 coop_smem[tid / wrap_size] = wrap_val;
             }
 
             // block.sync();
             __syncthreads();
 
-            if (tid < 32) {
+            if (tid < wrap_size) {
                 T v = (tid < (blockDim.x + wrap_size - 1) / wrap_size) ? coop_smem[tid] : T(0);
                 T total = warp_reduce(v, wrap_size);
                 if (tid == 0) {
