@@ -107,4 +107,8 @@ namespace cuda_poc::day01 {
         // average.
         test_gemm_with_kernel_fun("gemm_v3_1d_block_tiling (M=4096, N=2048, K=256)", 4096, 2048, 256, linear_v3<float>);
     }
+
+    TEST_F(CudaPoc_Day0401, GemmV4_4096x2048x256) {
+        test_gemm_with_kernel_fun("gemm_v4_2d_block_tiling (M=4096, N=2048, K=256)", 4096, 2048, 256, linear_v4<float>);
+    }
 } // namespace cuda_poc::day01

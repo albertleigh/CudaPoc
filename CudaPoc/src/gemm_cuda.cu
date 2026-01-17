@@ -182,4 +182,94 @@ namespace cuda_poc {
 
     template void linear_v3<float>(int M, int N, int K,
                                    float alpha, const float *A, const float *B, float beta, float *C);
+
+    // 2D Block Tiling: each thread computes LINEAR_THREAD_M × LINEAR_THREAD_N output elements
+    // Further improves memory reuse by tiling in both M and N dimensions
+    // Each A tile element is reused LINEAR_THREAD_N times
+    // Each B tile element is reused LINEAR_THREAD_M times
+    template<typename T>
+    __global__ void gemm_v4_2d_block_tiling(int M, int N, int K, T alpha, const T *A, const T *B, T beta, T *C) {
+        __shared__ T As[LINEAR_THREAD_M * LINEAR_BLOCK_DIM][LINEAR_BLOCK_DIM];
+        __shared__ T Bs[LINEAR_BLOCK_DIM][LINEAR_THREAD_N * LINEAR_BLOCK_DIM];
+
+        // Each thread computes LINEAR_THREAD_M × LINEAR_THREAD_N output elements
+        int thread_row_base = blockIdx.y * (LINEAR_THREAD_M * LINEAR_BLOCK_DIM) + threadIdx.y;
+        int thread_col_base = blockIdx.x * (LINEAR_THREAD_N * LINEAR_BLOCK_DIM) + threadIdx.x;
+
+        // 2D Accumulator array for LINEAR_THREAD_M × LINEAR_THREAD_N results
+        T accum[LINEAR_THREAD_M][LINEAR_THREAD_N];
+#pragma unroll
+        for (int m = 0; m < LINEAR_THREAD_M; ++m) {
+#pragma unroll
+            for (int n = 0; n < LINEAR_THREAD_N; ++n) {
+                accum[m][n] = T(0);
+            }
+        }
+
+        // Loop over K dimension in tiles
+        for (int bk = 0; bk < K; bk += LINEAR_BLOCK_DIM) {
+            // Cooperative loading of A tiles (LINEAR_THREAD_M rows per thread)
+#pragma unroll
+            for (int m = 0; m < LINEAR_THREAD_M; ++m) {
+                int a_row = thread_row_base + m * LINEAR_BLOCK_DIM;
+                int a_col = bk + threadIdx.x;
+                As[threadIdx.y + m * LINEAR_BLOCK_DIM][threadIdx.x] =
+                        (a_row < M && a_col < K) ? A[a_row * K + a_col] : T(0);
+            }
+
+            // Cooperative loading of B tiles (LINEAR_THREAD_N columns per thread)
+#pragma unroll
+            for (int n = 0; n < LINEAR_THREAD_N; ++n) {
+                int b_row = bk + threadIdx.y;
+                int b_col = thread_col_base + n * LINEAR_BLOCK_DIM;
+                Bs[threadIdx.y][threadIdx.x + n * LINEAR_BLOCK_DIM] =
+                        (b_row < K && b_col < N) ? B[b_row * N + b_col] : T(0);
+            }
+
+            __syncthreads();
+
+            // Compute LINEAR_THREAD_M × LINEAR_THREAD_N partial results
+#pragma unroll
+            for (int k = 0; k < LINEAR_BLOCK_DIM; ++k) {
+#pragma unroll
+                for (int m = 0; m < LINEAR_THREAD_M; ++m) {
+                    T a_val = As[threadIdx.y + m * LINEAR_BLOCK_DIM][k];
+#pragma unroll
+                    for (int n = 0; n < LINEAR_THREAD_N; ++n) {
+                        T b_val = Bs[k][threadIdx.x + n * LINEAR_BLOCK_DIM];
+                        accum[m][n] += a_val * b_val;
+                    }
+                }
+            }
+            __syncthreads();
+        }
+
+        // Write LINEAR_THREAD_M × LINEAR_THREAD_N results with alpha/beta scaling
+#pragma unroll
+        for (int m = 0; m < LINEAR_THREAD_M; ++m) {
+#pragma unroll
+            for (int n = 0; n < LINEAR_THREAD_N; ++n) {
+                int out_row = thread_row_base + m * LINEAR_BLOCK_DIM;
+                int out_col = thread_col_base + n * LINEAR_BLOCK_DIM;
+                if (out_row < M && out_col < N) {
+                    C[out_row * N + out_col] = alpha * accum[m][n] + beta * C[out_row * N + out_col];
+                }
+            }
+        }
+    }
+
+    // C++ callable wrapper function
+    template<typename T>
+    void linear_v4(int M, int N, int K, T alpha, const T *A, const T *B, T beta, T *C) {
+        // 2D block tiling: each thread computes LINEAR_THREAD_M × LINEAR_THREAD_N outputs
+        dim3 block(LINEAR_BLOCK_DIM, LINEAR_BLOCK_DIM);
+        int grid_y = (M + LINEAR_THREAD_M * LINEAR_BLOCK_DIM - 1) / (LINEAR_THREAD_M * LINEAR_BLOCK_DIM);
+        int grid_x = (N + LINEAR_THREAD_N * LINEAR_BLOCK_DIM - 1) / (LINEAR_THREAD_N * LINEAR_BLOCK_DIM);
+        dim3 grid(grid_x, grid_y);
+
+        gemm_v4_2d_block_tiling<T><<<grid, block>>>(M, N, K, alpha, A, B, beta, C);
+    }
+
+    template void linear_v4<float>(int M, int N, int K,
+                                   float alpha, const float *A, const float *B, float beta, float *C);
 }
