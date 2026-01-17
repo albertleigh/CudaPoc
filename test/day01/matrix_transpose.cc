@@ -46,7 +46,7 @@ namespace cuda_poc::day0302Transpose {
 
     // W/O Bank conflicts
     // === Kernel: transpose_small ===
-    // Execution time: 0.761856 ms
+    // Execution time: 0.963296 ms
     // Grid dimensions: (4, 4, 1)
     // Block dimensions: (32, 32, 1)
     // Total threads: 16384
@@ -54,7 +54,7 @@ namespace cuda_poc::day0302Transpose {
     // GPU memory free: 3298.25 MB / 4095.56 MB
     //
     // === Kernel: transpose_non_square_blocks ===
-    // Execution time: 1.56096 ms
+    // Execution time: 1.58624 ms
     // Grid dimensions: (32, 32, 1)
     // Block dimensions: (32, 32, 1)
     // Total threads: 1048576
@@ -62,7 +62,7 @@ namespace cuda_poc::day0302Transpose {
     // GPU memory free: 3292.25 MB / 4095.56 MB
     //
     // === Kernel: transpose_double ===
-    // Execution time: 0.952096 ms
+    // Execution time: 1.04291 ms
     // Grid dimensions: (16, 16, 1)
     // Block dimensions: (32, 32, 1)
     // Total threads: 262144
@@ -70,7 +70,15 @@ namespace cuda_poc::day0302Transpose {
     // GPU memory free: 3296.25 MB / 4095.56 MB
     //
     // === Kernel: transpose_rectangular ===
-    // Execution time: 0.939424 ms
+    // Execution time: 0.96288 ms
+    // Grid dimensions: (32, 16, 1)
+    // Block dimensions: (32, 32, 1)
+    // Total threads: 524288
+    // GPU memory used: 0 MB
+    // GPU memory free: 3296.25 MB / 4095.56 MB
+    //
+    // === Kernel: transpose_rectangular_v2_swizzling ===
+    // Execution time: 0.975168 ms
     // Grid dimensions: (32, 16, 1)
     // Block dimensions: (32, 32, 1)
     // Total threads: 524288
@@ -267,4 +275,36 @@ namespace cuda_poc::day0302Transpose {
         EXPECT_TRUE(verify_transpose(h_input, h_output, ROWS, COLS));
         free_device_memory(d_input, d_output);
     }
-} // namespace cuda_poc::day01
+
+    TEST_F(CudaPoc_Day0302, TransposeRectangularV2Swizzling) {
+        constexpr int ROWS = 512;
+        constexpr int COLS = 1024;
+        constexpr size_t SIZE = ROWS * COLS;
+        size_t size_bytes = SIZE * sizeof(float);
+
+        dim3 block_dim(TRANSPOSE_BLOCK_DIM, TRANSPOSE_BLOCK_DIM);
+        dim3 grid_dim((COLS + TRANSPOSE_BLOCK_DIM - 1) / TRANSPOSE_BLOCK_DIM,
+                      (ROWS + TRANSPOSE_BLOCK_DIM - 1) / TRANSPOSE_BLOCK_DIM);
+
+        std::vector<float> h_input(SIZE);
+        for (size_t i = 0; i < SIZE; ++i) {
+            h_input[i] = static_cast<float>(i);
+        }
+        std::vector<float> h_output(SIZE);
+
+        float *d_input;
+        float *d_output;
+        CUDA_CHECK(cudaMalloc(&d_input, size_bytes));
+        CUDA_CHECK(cudaMalloc(&d_output, size_bytes));
+
+        KernelConfig config(grid_dim, block_dim);
+        timeKernel("transpose_rectangular_v2_swizzling", [&]() {
+            CUDA_CHECK(cudaMemcpy(d_input, h_input.data(), size_bytes, cudaMemcpyHostToDevice));
+            transpose_v2<float>(d_output, d_input, ROWS, COLS, grid_dim, block_dim);
+            CUDA_CHECK(cudaMemcpy(h_output.data(), d_output, size_bytes, cudaMemcpyDeviceToHost));
+        }, &config);
+
+        EXPECT_TRUE(verify_transpose(h_input, h_output, ROWS, COLS));
+        free_device_memory(d_input, d_output);
+    }
+} // namespace cuda_poc::day0302Transpose

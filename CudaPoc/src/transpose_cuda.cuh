@@ -14,4 +14,7 @@ namespace cuda_poc {
     // For rectangular matrices: input is rows x cols, output is cols x rows
     template<typename T>
     void transpose(T *output, const T *input, int rows, int cols, dim3 grid_dim, dim3 block_dim);
+
+    template<typename T>
+    void transpose_v2(T *output, const T *input, int rows, int cols, dim3 grid_dim, dim3 block_dim);
 } // namespace cuda_poc
