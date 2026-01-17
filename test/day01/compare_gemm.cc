@@ -100,4 +100,11 @@ namespace cuda_poc::day01 {
         // between issuing two instructions.
         test_gemm_with_kernel_fun("gemm_v2_smem (M=4096, N=2048, K=256)", 4096, 2048, 256, linear_v2<float>);
     }
+
+    TEST_F(CudaPoc_Day0401, GemmV3_4096x2048x256) {
+        // One or more L2 Slices have a much higher number of active cycles than the average number of active cycles.
+        // Maximum instance value is 20.04% above the average, while the minimum instance value is 3.69% below the
+        // average.
+        test_gemm_with_kernel_fun("gemm_v3_1d_block_tiling (M=4096, N=2048, K=256)", 4096, 2048, 256, linear_v3<float>);
+    }
 } // namespace cuda_poc::day01
