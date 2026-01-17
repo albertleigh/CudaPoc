@@ -5,8 +5,9 @@ find_package(CUDAToolkit REQUIRED)
 
 set(SRCS
         src/add_cuda.cu
-        src/cuda_utils.h
         src/sum_cuda.cu
+        src/transpose_cuda.cu
+        src/cuda_utils.h
 )
 
 message(STATUS "libs ${LIBS} CUDA::cudart")
