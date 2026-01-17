@@ -1,0 +1,89 @@
+//
+// Created by Albert Li on 1/18/2026.
+//
+
+#include <gtest/gtest.h>
+#include "gemm_cuda.cuh"
+#include "cuda_utils.h"
+#include <fmt/format.h>
+#include <vector>
+
+namespace cuda_poc::day01 {
+    using namespace cuda_poc;
+
+    class CudaPoc_Day0401 : public ::testing::Test {
+    protected:
+        static void SetUpTestSuite() {
+            // Check if CUDA is available
+            int deviceCount = 0;
+            cudaError_t error = cudaGetDeviceCount(&deviceCount);
+            if (error != cudaSuccess) {
+                FAIL() << fmt::format("Failed to get device count: {}", cudaGetErrorString(error));
+            }
+
+            fmt::println("Found {} CUDA device(s)", deviceCount);
+
+            // Get device properties
+            cudaDeviceProp prop{};
+            error = cudaGetDeviceProperties(&prop, 0);
+            if (error != cudaSuccess) {
+                FAIL() << fmt::format("Failed to get device properties: {}", cudaGetErrorString(error));
+            }
+
+            fmt::println("Device: {}", prop.name);
+        }
+    };
+
+    void free_device_memory(float *d_A, float *d_B, float *d_C) {
+        if (d_A) { CUDA_CHECK(cudaFree(d_A)); }
+        if (d_B) { CUDA_CHECK(cudaFree(d_B)); }
+        if (d_C) { CUDA_CHECK(cudaFree(d_C)); }
+    }
+
+    void test_gemm_v1(const char *test_name, int M, int N, int K) {
+        constexpr float alpha = 1.0f;
+        constexpr float beta = 0.0f;
+
+        size_t size_A = M * K * sizeof(float);
+        size_t size_B = K * N * sizeof(float);
+        size_t size_C = M * N * sizeof(float);
+
+        // Initialize host matrices with small values for verification
+        std::vector<float> h_A(M * K, 0.01f);
+        std::vector<float> h_B(K * N, 0.01f);
+        std::vector<float> h_C(M * N, 0.0f);
+
+        // Allocate device memory
+        float *d_A, *d_B, *d_C;
+        CUDA_CHECK(cudaMalloc(&d_A, size_A));
+        CUDA_CHECK(cudaMalloc(&d_B, size_B));
+        CUDA_CHECK(cudaMalloc(&d_C, size_C));
+
+        dim3 block(32, 32);
+        dim3 grid((M + block.x - 1) / block.x, (N + block.y - 1) / block.y);
+        KernelConfig config(grid, block);
+
+        timeKernel(test_name, [&]() {
+            CUDA_CHECK(cudaMemcpy(d_A, h_A.data(), size_A, cudaMemcpyHostToDevice));
+            CUDA_CHECK(cudaMemcpy(d_B, h_B.data(), size_B, cudaMemcpyHostToDevice));
+            CUDA_CHECK(cudaMemcpy(d_C, h_C.data(), size_C, cudaMemcpyHostToDevice));
+
+            linear_v1<float>(M, N, K, alpha, d_A, d_B, beta, d_C);
+            CUDA_CHECK(cudaDeviceSynchronize());
+
+            CUDA_CHECK(cudaMemcpy(h_C.data(), d_C, size_C, cudaMemcpyDeviceToHost));
+        }, &config);
+
+        // Verify: each element should be approximately K * 0.01 * 0.01 = K * 0.0001
+        float expected = K * 0.01f * 0.01f;
+        for (int i = 0; i < std::min(100, M * N); ++i) {
+            EXPECT_NEAR(h_C[i], expected, 1e-3) << "Mismatch at index " << i;
+        }
+
+        free_device_memory(d_A, d_B, d_C);
+    }
+
+    TEST_F(CudaPoc_Day0401, GemmV1_4096x2048x256) {
+        test_gemm_v1("gemm_v1_naive (M=4096, N=2048, K=256)", 4096, 2048, 256);
+    }
+} // namespace cuda_poc::day01
