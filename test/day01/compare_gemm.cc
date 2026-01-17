@@ -40,7 +40,10 @@ namespace cuda_poc::day01 {
         if (d_C) { CUDA_CHECK(cudaFree(d_C)); }
     }
 
-    void test_gemm_v1(const char *test_name, int M, int N, int K) {
+    void test_gemm_with_kernel_fun(const char *test_name, int M, int N, int K,
+                                   std::function<
+                                       void(int, int, int, float, const float *, const float *, float, float *)
+                                   > gemm_kernel_func) {
         constexpr float alpha = 1.0f;
         constexpr float beta = 0.0f;
 
@@ -68,7 +71,7 @@ namespace cuda_poc::day01 {
             CUDA_CHECK(cudaMemcpy(d_B, h_B.data(), size_B, cudaMemcpyHostToDevice));
             CUDA_CHECK(cudaMemcpy(d_C, h_C.data(), size_C, cudaMemcpyHostToDevice));
 
-            linear_v1<float>(M, N, K, alpha, d_A, d_B, beta, d_C);
+            gemm_kernel_func(M, N, K, alpha, d_A, d_B, beta, d_C);
             CUDA_CHECK(cudaDeviceSynchronize());
 
             CUDA_CHECK(cudaMemcpy(h_C.data(), d_C, size_C, cudaMemcpyDeviceToHost));
@@ -84,6 +87,17 @@ namespace cuda_poc::day01 {
     }
 
     TEST_F(CudaPoc_Day0401, GemmV1_4096x2048x256) {
-        test_gemm_v1("gemm_v1_naive (M=4096, N=2048, K=256)", 4096, 2048, 256);
+        test_gemm_with_kernel_fun("gemm_v1_naive (M=4096, N=2048, K=256)", 4096, 2048, 256, linear_v1<float>);
+    }
+
+    TEST_F(CudaPoc_Day0401, GemmV2_4096x2048x256) {
+        // Stall MIO Throttle: Warp was stalled waiting for MIO (memory input/output).
+        // on average, each warp of this workload spends 26.2 cycles being stalled waiting for the MIO
+        // (memory input/output) instruction queue to be not full. This stall reason is high in cases of extreme
+        // utilization of the MIO pipelines, which include special math instructions, dynamic branches, as well as
+        // shared memory instructions. When caused by shared memory accesses, trying to use fewer but wider loads
+        // can reduce pipeline pressure. This stall type represents about 68.4% of the total average of 38.3 cycles
+        // between issuing two instructions.
+        test_gemm_with_kernel_fun("gemm_v2_smem (M=4096, N=2048, K=256)", 4096, 2048, 256, linear_v2<float>);
     }
 } // namespace cuda_poc::day01
