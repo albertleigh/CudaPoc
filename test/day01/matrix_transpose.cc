@@ -45,45 +45,53 @@ namespace cuda_poc::day0302Transpose {
     // GPU memory free: 3296.25 MB / 4095.56 MB
 
     // W/O Bank conflicts
-    // === Kernel: transpose_small ===
-    // Execution time: 0.963296 ms
-    // Grid dimensions: (4, 4, 1)
+    // === Kernel: transpose_4096 ===
+    // Execution time: 32.7436 ms
+    // Grid dimensions: (128, 128, 1)
     // Block dimensions: (32, 32, 1)
-    // Total threads: 16384
-    // GPU memory used: 2 MB
-    // GPU memory free: 3298.25 MB / 4095.56 MB
+    // Total threads: 16777216
+    // GPU memory used: 30 MB
+    // GPU memory free: 3144.25 MB / 4095.56 MB
+    //
+    // === Kernel: transpose_4096_swizzling ===
+    // Execution time: 23.6546 ms
+    // Grid dimensions: (128, 128, 1)
+    // Block dimensions: (32, 32, 1)
+    // Total threads: 16777216
+    // GPU memory used: 0 MB
+    // GPU memory free: 3144.25 MB / 4095.56 MB
     //
     // === Kernel: transpose_non_square_blocks ===
-    // Execution time: 1.58624 ms
+    // Execution time: 1.6353 ms
     // Grid dimensions: (32, 32, 1)
     // Block dimensions: (32, 32, 1)
     // Total threads: 1048576
     // GPU memory used: 0 MB
-    // GPU memory free: 3292.25 MB / 4095.56 MB
+    // GPU memory free: 3264.25 MB / 4095.56 MB
     //
     // === Kernel: transpose_double ===
-    // Execution time: 1.04291 ms
+    // Execution time: 1.01888 ms
     // Grid dimensions: (16, 16, 1)
     // Block dimensions: (32, 32, 1)
     // Total threads: 262144
     // GPU memory used: 0 MB
-    // GPU memory free: 3296.25 MB / 4095.56 MB
+    // GPU memory free: 3268.25 MB / 4095.56 MB
     //
     // === Kernel: transpose_rectangular ===
-    // Execution time: 0.96288 ms
+    // Execution time: 0.971584 ms
     // Grid dimensions: (32, 16, 1)
     // Block dimensions: (32, 32, 1)
     // Total threads: 524288
     // GPU memory used: 0 MB
-    // GPU memory free: 3296.25 MB / 4095.56 MB
+    // GPU memory free: 3268.25 MB / 4095.56 MB
     //
     // === Kernel: transpose_rectangular_v2_swizzling ===
-    // Execution time: 0.975168 ms
+    // Execution time: 1.00518 ms
     // Grid dimensions: (32, 16, 1)
     // Block dimensions: (32, 32, 1)
     // Total threads: 524288
     // GPU memory used: 0 MB
-    // GPU memory free: 3296.25 MB / 4095.56 MB
+    // GPU memory free: 3268.25 MB / 4095.56 MB
 
 
     class CudaPoc_Day0302 : public ::testing::Test {
@@ -130,8 +138,8 @@ namespace cuda_poc::day0302Transpose {
         return true;
     }
 
-    TEST_F(CudaPoc_Day0302, TransposeSmall) {
-        constexpr int MATRIX_DIM = 128;
+    TEST_F(CudaPoc_Day0302, Transpose) {
+        constexpr int MATRIX_DIM = 4096;
         constexpr size_t SIZE = MATRIX_DIM * MATRIX_DIM;
         size_t size_bytes = SIZE * sizeof(float);
 
@@ -153,9 +161,42 @@ namespace cuda_poc::day0302Transpose {
         CUDA_CHECK(cudaMalloc(&d_output, size_bytes));
 
         KernelConfig config(grid_dim, block_dim);
-        timeKernel("transpose_small", [&]() {
+        timeKernel("transpose_4096", [&]() {
             CUDA_CHECK(cudaMemcpy(d_input, h_input.data(), size_bytes, cudaMemcpyHostToDevice));
             transpose<float>(d_output, d_input, MATRIX_DIM, MATRIX_DIM, grid_dim, block_dim);
+            CUDA_CHECK(cudaMemcpy(h_output.data(), d_output, size_bytes, cudaMemcpyDeviceToHost));
+        }, &config);
+
+        EXPECT_TRUE(verify_transpose(h_input, h_output, MATRIX_DIM, MATRIX_DIM));
+        free_device_memory(d_input, d_output);
+    }
+
+    TEST_F(CudaPoc_Day0302, TransposeSwizzling) {
+        constexpr int MATRIX_DIM = 4096;
+        constexpr size_t SIZE = MATRIX_DIM * MATRIX_DIM;
+        size_t size_bytes = SIZE * sizeof(float);
+
+        // Use 32x32 blocks to match TRANSPOSE_BLOCK_DIM
+        dim3 block_dim(TRANSPOSE_BLOCK_DIM, TRANSPOSE_BLOCK_DIM);
+        dim3 grid_dim((MATRIX_DIM + TRANSPOSE_BLOCK_DIM - 1) / TRANSPOSE_BLOCK_DIM,
+                      (MATRIX_DIM + TRANSPOSE_BLOCK_DIM - 1) / TRANSPOSE_BLOCK_DIM);
+
+        // Initialize input matrix with sequential values
+        std::vector<float> h_input(SIZE);
+        for (size_t i = 0; i < SIZE; ++i) {
+            h_input[i] = static_cast<float>(i);
+        }
+        std::vector<float> h_output(SIZE);
+
+        float *d_input;
+        float *d_output;
+        CUDA_CHECK(cudaMalloc(&d_input, size_bytes));
+        CUDA_CHECK(cudaMalloc(&d_output, size_bytes));
+
+        KernelConfig config(grid_dim, block_dim);
+        timeKernel("transpose_4096_swizzling", [&]() {
+            CUDA_CHECK(cudaMemcpy(d_input, h_input.data(), size_bytes, cudaMemcpyHostToDevice));
+            transpose_v2<float>(d_output, d_input, MATRIX_DIM, MATRIX_DIM, grid_dim, block_dim);
             CUDA_CHECK(cudaMemcpy(h_output.data(), d_output, size_bytes, cudaMemcpyDeviceToHost));
         }, &config);
 
