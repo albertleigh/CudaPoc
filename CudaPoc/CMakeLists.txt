@@ -3,6 +3,9 @@ include_guard(GLOBAL)
 # Find CUDA Toolkit
 find_package(CUDAToolkit REQUIRED)
 
+# Find CUTLASS
+find_package(NvidiaCutlass CONFIG REQUIRED)
+
 set(SRCS
         src/add_cuda.cu
         src/depth_cuda.cu
@@ -27,6 +30,7 @@ target_link_libraries(cudaPoc
         PUBLIC
         CUDA::cudart
         CUDA::cublas
+        nvidia::cutlass::cutlass
 )
 # Enable separable compilation and relocatable device code for dynamic parallelism
 set_target_properties(cudaPoc PROPERTIES 

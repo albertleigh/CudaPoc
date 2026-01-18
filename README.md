@@ -30,10 +30,16 @@ https://en.wikipedia.org/wiki/CUDA#GPUs_supported
 ### setup environment:
 
 CMAKE:
+
 CUDA TOOLKIT: https://developer.nvidia.com/cuda/toolkit
 Set up environment variables like:
 CUDAToolkit_ROOT = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1
 CMAKE_CUDA_COMPILER = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1/bin/nvcc.exe
+
+Please download CUDNN from official sources (https://developer.nvidia.com/cudnn) and install it
+Could NOT find CUDNN (missing: CUDNN_INCLUDE_DIR CUDNN_LIBRARY)
+CUDNN_INCLUDE_DIR = C:\Program Files\NVIDIA\CUDNN\v9.18\include\13.1
+CUDNN_LIBRARY = C:\Program Files\NVIDIA\CUDNN\v9.18\lib\13.1\x64\cudnn.lib
 
 ### vckpkg setup
 
@@ -88,6 +94,13 @@ vcpkg install
 
 - Test gtest cases (User):
 - .\cmake-build-debug\test\test_day01.exe
+
+- NSight System(nsys):
+- nsys profile -t cuda,nvtx,osrt -o stream -f true ./stream
+  then use Nsight system to open stream.nsys-rep
+- 
+- Check topo structure among multiple GPUs:
+- nvidia-smi topo -m
 
 ### Sample roofline chart:
 
