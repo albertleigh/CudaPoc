@@ -41,6 +41,12 @@ Could NOT find CUDNN (missing: CUDNN_INCLUDE_DIR CUDNN_LIBRARY)
 CUDNN_INCLUDE_DIR = C:\Program Files\NVIDIA\CUDNN\v9.18\include\13.1
 CUDNN_LIBRARY = C:\Program Files\NVIDIA\CUDNN\v9.18\lib\13.1\x64\cudnn.lib
 
+set up for linux:
+export CUDAToolkit_ROOT="/usr/local/cuda-13.1"
+export CMAKE_CUDA_COMPILER="/usr/local/cuda-13.1/bin/nvcc"
+export CUDNN_INCLUDE_DIR="/usr/include/x86_64-linux-gnu"
+export CUDNN_LIBRARY="/usr/lib/x86_64-linux-gnu/libcudnn.so"
+
 ### vckpkg setup
 
 git clone https://github.com/microsoft/vcpkg.git
@@ -57,6 +63,7 @@ export VCPKG_ROOT=""/path/to/vcpkg"
 - vcpkg install gtest
 
 and set `-DCMAKE_TOOLCHAIN_FILE="D:/opt/vcpkg/scripts/buildsystems/vcpkg.cmake"`
+and set `-DCMAKE_TOOLCHAIN_FILE="~/opt/vcpkg/scripts/buildsystems/vcpkg.cmake"`
 and set `-DVCPKG_MANIFEST_INSTALL=OFF` if needed
 
 ### Repo init

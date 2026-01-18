@@ -11,14 +11,25 @@ get_filename_component(PYTHON_PATH "${PYTHON3}" PATH)
 vcpkg_add_to_path(PREPEND "${PYTHON_PATH}")
 
 # Find CUDA manually
-find_program(NVCC nvcc PATHS ENV CUDA_PATH PATH_SUFFIXES bin)
+find_program(NVCC nvcc 
+    PATHS 
+        ENV CUDA_PATH 
+        /usr/local/cuda/bin
+        /usr/local/cuda-12.6/bin
+        /usr/local/cuda-12.5/bin
+        /usr/local/cuda-12/bin
+    PATH_SUFFIXES bin
+)
 if(NVCC)
     get_filename_component(CUDA_BIN_DIR "${NVCC}" DIRECTORY)
     get_filename_component(cuda_toolkit_root "${CUDA_BIN_DIR}" DIRECTORY)
+    message(STATUS "Found CUDA: ${cuda_toolkit_root}")
     list(APPEND FEATURE_OPTIONS
         "-DCMAKE_CUDA_COMPILER=${NVCC}"
         "-DCUDAToolkit_ROOT=${cuda_toolkit_root}"
     )
+else()
+    message(WARNING "CUDA not found. CUTLASS may not configure properly.")
 endif()
 
 # cuDNN is disabled because cuDNN 9.18 uses a versioned directory structure (include/13.1)
