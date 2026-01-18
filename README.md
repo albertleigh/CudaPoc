@@ -83,6 +83,11 @@ vcpkg install
 - ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0101.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0101.HelloCuda
 - ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0103.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0103.CompareInTypes
 - ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0301.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0301.*
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0302.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0302.*
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0401.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0401.*
+
+- Test gtest cases (User):
+- .\cmake-build-debug\test\test_day01.exe
 
 ### Sample roofline chart:
 

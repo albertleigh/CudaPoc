@@ -10,7 +10,6 @@ find_package(GTest CONFIG REQUIRED)
 
 message(STATUS "GTEST PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR}")
 
-
 #day01
 
 file(GLOB_RECURSE DAY01_TEST_HEADER
@@ -29,7 +28,6 @@ target_link_libraries(
         test_day01
         PUBLIC
         cudaPoc
-        CUDA::cudart
         PRIVATE
         fmt::fmt-header-only
         Threads::Threads
