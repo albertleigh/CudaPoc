@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
+#include <cublas_v2.h>
 
 namespace cuda_poc::linear {
     constexpr int BLOCK_DIM = 32;
@@ -42,4 +43,8 @@ namespace cuda_poc::linear {
 
     template<typename T>
     void linear_v5(int M, int N, int K, T alpha, const T *A, const T *B, T beta, T *C);
+
+    //  cublasHandle_t handle is already a pointer type, so pass it directly (not &handle)
+    template<typename T>
+    void linear_v6(cublasHandle_t handle, int M, int N, int K, T alpha, const T *A, const T *B, T beta, T *C);
 } // namespace cuda_poc::linear

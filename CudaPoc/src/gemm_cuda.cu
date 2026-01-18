@@ -401,4 +401,28 @@ namespace cuda_poc::linear {
 
     template void linear_v5<float>(int M, int N, int K,
                                    float alpha, const float *A, const float *B, float beta, float *C);
+
+
+    // cuBLAS wrapper function
+    // Note: cuBLAS uses column-major order, our code uses row-major
+    // Row-major: C = alpha * A * B + beta * C (C is M×N, A is M×K, B is K×N)
+    // Column-major equivalent: C^T = alpha * B^T * A^T + beta * C^T
+    // So we swap A↔B and M↔N when calling cuBLAS
+    template<typename T>
+    void linear_v6(cublasHandle_t handle, int M, int N, int K, T alpha, const T *A, const T *B, T beta, T *C) {
+        // cuBLAS SGEMM: C = alpha * op(A) * op(B) + beta * C
+        // For row-major to column-major conversion:
+        // Swap A and B, swap M and N
+        cublasSgemm(handle,
+                    CUBLAS_OP_N, CUBLAS_OP_N,
+                    N, M, K, // Swapped dimensions
+                    &alpha,
+                    B, N, // B becomes first operand with leading dimension N
+                    A, K, // A becomes second operand with leading dimension K
+                    &beta,
+                    C, N); // C with leading dimension N
+    }
+
+    template void linear_v6<float>(cublasHandle_t handle, int M, int N, int K,
+                                   float alpha, const float *A, const float *B, float beta, float *C);
 }

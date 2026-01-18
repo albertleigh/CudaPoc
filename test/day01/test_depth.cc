@@ -22,11 +22,16 @@ namespace cuda_poc::day01 {
             }
             fmt::println("Device: {}", prop.name);
 
-            // Set `cudaLimitStackSize` when really needed
-            error = cudaDeviceSetLimit(cudaLimitStackSize, 1024 * 1024);
-
+            // Set stack size for dynamic parallelism (default is usually 1KB, increase if needed)
+            error = cudaDeviceSetLimit(cudaLimitStackSize, 8192);
             if (error != cudaSuccess) {
-                FAIL() << fmt::format("Failed to set cudaLimitStackSize due to: {}", cudaGetErrorString(error));
+                FAIL() << fmt::format("Failed to set cudaLimitStackSize: {}", cudaGetErrorString(error));
+            }
+
+            // Set device heap size for dynamic parallelism kernel launches (increase if many nested launches)
+            error = cudaDeviceSetLimit(cudaLimitMallocHeapSize, 128 * 1024 * 1024);
+            if (error != cudaSuccess) {
+                FAIL() << fmt::format("Failed to set cudaLimitMallocHeapSize: {}", cudaGetErrorString(error));
             }
         }
     };

@@ -2,50 +2,60 @@
 // Created by Albert Li on 1/18/2026.
 //
 // === Kernel: gemm_v1_naive (M=4096, N=2048, K=256) ===
-// Execution time: 111.074 ms
+// Execution time: 115.988 ms
 // Grid dimensions: (128, 64, 1)
 // Block dimensions: (32, 32, 1)
 // Total threads: 8388608
-// GPU memory used: 2 MB
-// GPU memory free: 3262.25 MB / 4095.56 MB
+// GPU memory used: 30 MB
+// GPU memory free: 3234.25 MB / 4095.56 MB
 //
 // === Kernel: gemm_v2_smem (M=4096, N=2048, K=256) ===
-// Execution time: 25.6332 ms
+// Execution time: 26.6019 ms
 // Grid dimensions: (128, 64, 1)
 // Block dimensions: (32, 32, 1)
 // Total threads: 8388608
 // GPU memory used: 0 MB
-// GPU memory free: 3262.25 MB / 4095.56 MB
+// GPU memory free: 3234.25 MB / 4095.56 MB
 //
 // === Kernel: gemm_v3_1d_block_tiling (M=4096, N=2048, K=256) ===
-// Execution time: 19.9837 ms
+// Execution time: 21.5184 ms
 // Grid dimensions: (128, 64, 1)
 // Block dimensions: (32, 32, 1)
 // Total threads: 8388608
 // GPU memory used: 0 MB
-// GPU memory free: 3262.25 MB / 4095.56 MB
+// GPU memory free: 3234.25 MB / 4095.56 MB
 //
 // === Kernel: gemm_v4_2d_block_tiling (M=4096, N=2048, K=256) ===
-// Execution time: 15.4924 ms
+// Execution time: 15.8737 ms
 // Grid dimensions: (128, 64, 1)
 // Block dimensions: (32, 32, 1)
 // Total threads: 8388608
 // GPU memory used: 0 MB
-// GPU memory free: 3262.25 MB / 4095.56 MB
+// GPU memory free: 3234.25 MB / 4095.56 MB
 //
 // === Kernel: gemm_v5_warptiling (M=4096, N=2048, K=256) ===
-// Execution time: 52.2885 ms
+// Execution time: 16.5212 ms
 // Grid dimensions: (128, 64, 1)
 // Block dimensions: (32, 32, 1)
 // Total threads: 8388608
 // GPU memory used: 0 MB
-// GPU memory free: 3262.25 MB / 4095.56 MB
+// GPU memory free: 3234.25 MB / 4095.56 MB
+//
+// === Kernel: gemm_v6_cublasSgemm (M=4096, N=2048, K=256) ===
+// Execution time: 55.4402 ms
+// Grid dimensions: (128, 64, 1)
+// Block dimensions: (32, 32, 1)
+// Total threads: 8388608
+// GPU memory used: 0 MB
+// GPU memory free: 3224.25 MB / 4095.56 MB
 
 #include <gtest/gtest.h>
 #include "gemm_cuda.cuh"
 #include "cuda_utils.h"
 #include <fmt/format.h>
 #include <vector>
+#include <functional>
+#include <cublas_v2.h>
 
 namespace cuda_poc::day01 {
     using namespace cuda_poc::linear;
@@ -153,5 +163,21 @@ namespace cuda_poc::day01 {
 
     TEST_F(CudaPoc_Day0401, GemmV5_4096x2048x256) {
         test_gemm_with_kernel_fun("gemm_v5_warptiling (M=4096, N=2048, K=256)", 4096, 2048, 256, linear_v5<float>);
+    }
+
+    TEST_F(CudaPoc_Day0401, GemmV6_4096x2048x256) {
+        // Create cuBLAS handle once for this test
+        cublasHandle_t handle;
+        cublasCreate(&handle);
+        
+        // Use std::bind to bind the handle as the first parameter
+        auto gemm_func = std::bind(linear_v6<float>, handle,
+                                   std::placeholders::_1, std::placeholders::_2, std::placeholders::_3,
+                                   std::placeholders::_4, std::placeholders::_5, std::placeholders::_6,
+                                   std::placeholders::_7, std::placeholders::_8);
+        
+        test_gemm_with_kernel_fun("gemm_v6_cublasSgemm (M=4096, N=2048, K=256)", 4096, 2048, 256, gemm_func);
+        
+        cublasDestroy(handle);
     }
 } // namespace cuda_poc::day01

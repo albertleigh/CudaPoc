@@ -12,8 +12,6 @@ set(SRCS
         src/cuda_utils.h
 )
 
-message(STATUS "libs ${LIBS} CUDA::cudart")
-
 add_library(cudaPoc STATIC ${SRCS})
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -21,10 +19,17 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(cudaPoc PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>)
 endif ()
 
+# Enable relocatable device code for dynamic parallelism
+target_compile_options(cudaPoc PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-rdc=true>)
+
 target_include_directories(cudaPoc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(cudaPoc
-        PRIVATE
-        ${LIBS}
+        PUBLIC
+        CUDA::cudart
+        CUDA::cublas
 )
-# Enable separable compilation
-set_target_properties(cudaPoc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+# Enable separable compilation and relocatable device code for dynamic parallelism
+set_target_properties(cudaPoc PROPERTIES 
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_RESOLVE_DEVICE_SYMBOLS ON
+)
