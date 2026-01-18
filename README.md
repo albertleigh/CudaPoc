@@ -41,11 +41,13 @@ Could NOT find CUDNN (missing: CUDNN_INCLUDE_DIR CUDNN_LIBRARY)
 CUDNN_INCLUDE_DIR = C:\Program Files\NVIDIA\CUDNN\v9.18\include\13.1
 CUDNN_LIBRARY = C:\Program Files\NVIDIA\CUDNN\v9.18\lib\13.1\x64\cudnn.lib
 
-set up for linux:
+- set up for linux:
 export CUDAToolkit_ROOT="/usr/local/cuda-13.1"
 export CMAKE_CUDA_COMPILER="/usr/local/cuda-13.1/bin/nvcc"
 export CUDNN_INCLUDE_DIR="/usr/include/x86_64-linux-gnu"
 export CUDNN_LIBRARY="/usr/lib/x86_64-linux-gnu/libcudnn.so"
+- for ncu/nsys
+export PATH="/usr/local/cuda-13.1/bin:$PATH
 
 ### vckpkg setup
 
