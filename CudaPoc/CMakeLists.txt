@@ -5,6 +5,7 @@ find_package(CUDAToolkit REQUIRED)
 
 set(SRCS
         src/add_cuda.cu
+        src/depth_cuda.cu
         src/gemm_cuda.cu
         src/sum_cuda.cu
         src/transpose_cuda.cu
