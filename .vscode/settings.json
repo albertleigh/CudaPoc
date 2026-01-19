@@ -10,6 +10,6 @@
         "-DVCPKG_TARGET_TRIPLET=x64-windows"
     ],
     "cmake.environment": {
-        "VCPKG_ROOT": "C:/opt/vcpkg"
+        "VCPKG_ROOT": "~/opt/vcpkg"
     }
 }
