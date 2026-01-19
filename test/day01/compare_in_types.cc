@@ -144,9 +144,9 @@ namespace cuda_poc::day01 {
         {
             constexpr size_t SIZE_USED = SIZE / 2;
             size_t size_bytes_used = SIZE_USED * sizeof(float2);
-            std::vector<float2> h_a(SIZE_USED, float2(1, 1));
-            std::vector<float2> h_b(SIZE_USED, float2(2, 2));
-            std::vector<float2> h_c(SIZE_USED, float2(0, 0));
+            std::vector<float2> h_a(SIZE_USED, make_float2(1, 1));
+            std::vector<float2> h_b(SIZE_USED, make_float2(2, 2));
+            std::vector<float2> h_c(SIZE_USED, make_float2(0, 0));
 
             float2 *d_a, *d_b, *d_c;
             CUDA_CHECK(cudaMalloc(&d_a, size_bytes_used));
@@ -165,17 +165,17 @@ namespace cuda_poc::day01 {
             }, &config);
             fmt::println("Size used: {}", SIZE_USED);
 
-            assert_vector_equal(h_c, SIZE_USED, float2(3, 3));
+            assert_vector_equal(h_c, SIZE_USED, make_float2(3, 3));
             free_device_ptr(d_a, d_b, d_c);
         }
 
-        // floa3
+        // float3
         {
             constexpr size_t SIZE_USED = (SIZE + 2) / 3;
             size_t size_bytes_used = SIZE_USED * sizeof(float3);
-            std::vector<float3> h_a(SIZE_USED, float3(1, 1, 1));
-            std::vector<float3> h_b(SIZE_USED, float3(2, 2, 2));
-            std::vector<float3> h_c(SIZE_USED, float3(0, 0, 0));
+            std::vector<float3> h_a(SIZE_USED, make_float3(1, 1, 1));
+            std::vector<float3> h_b(SIZE_USED, make_float3(2, 2, 2));
+            std::vector<float3> h_c(SIZE_USED, make_float3(0, 0, 0));
 
             float3 *d_a, *d_b, *d_c;
             CUDA_CHECK(cudaMalloc(&d_a, size_bytes_used));
@@ -194,7 +194,7 @@ namespace cuda_poc::day01 {
             }, &config);
             fmt::println("Size used: {}", SIZE_USED);
 
-            assert_vector_equal(h_c, SIZE_USED, float3(3, 3, 3));
+            assert_vector_equal(h_c, SIZE_USED, make_float3(3, 3, 3));
             free_device_ptr(d_a, d_b, d_c);
         }
 
@@ -202,9 +202,9 @@ namespace cuda_poc::day01 {
         {
             constexpr size_t SIZE_USED = SIZE / 4;
             size_t size_bytes_used = SIZE_USED * sizeof(float4);
-            std::vector<float4> h_a(SIZE_USED, float4(1, 1, 1, 1));
-            std::vector<float4> h_b(SIZE_USED, float4(2, 2, 2, 2));
-            std::vector<float4> h_c(SIZE_USED, float4(0, 0, 0, 0));
+            std::vector<float4> h_a(SIZE_USED, make_float4(1, 1, 1, 1));
+            std::vector<float4> h_b(SIZE_USED, make_float4(2, 2, 2, 2));
+            std::vector<float4> h_c(SIZE_USED, make_float4(0, 0, 0, 0));
 
             float4 *d_a, *d_b, *d_c;
             CUDA_CHECK(cudaMalloc(&d_a, size_bytes_used));
@@ -223,7 +223,7 @@ namespace cuda_poc::day01 {
             }, &config);
             fmt::println("Size used: {}", SIZE_USED);
 
-            assert_vector_equal(h_c, SIZE_USED, float4(3, 3, 3, 3));
+            assert_vector_equal(h_c, SIZE_USED, make_float4(3, 3, 3, 3));
             free_device_ptr(d_a, d_b, d_c);
         }
 

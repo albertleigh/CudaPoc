@@ -9,12 +9,23 @@
 
 namespace cuda_poc::linear {
     constexpr int BLOCK_DIM = 32;
-    // Each thread computes 8 output elements along M dimension.  Values of 4, 8, or 16 are typical in optimized
-    // GEMM implementations. 8 is a sweet spot for many architectures
-    constexpr int THREAD_M = 8;
-    // Entry function '_ZN8cuda_poc23gemm_v4_2d_block_tilingIfEEviiiT_PKS1_S3_S1_PS1_' uses too much shared data
-    // (0x10000 bytes, 0xc000 max)
-    // Thus I cannot set as 8 on my GTX A500
+    // Each thread computes THREAD_M output elements along M dimension
+    // Architecture limits and actual register usage (compiler optimizations vary!):
+    //   sm_75 (Turing):  65536 regs/block, 48KB smem/block
+    //   sm_86 (Ampere):  65536 regs/block, 99KB smem/block (164KB configurable)
+    //   sm_89 (Ada):     65536 regs/block, 99KB smem/block (227KB configurable)
+    // With 32x32 block (1024 threads):
+    //   THREAD_M=8, THREAD_N=4: Works on sm_86+, FAILS on sm_75 (exceeds register limit)
+    //   THREAD_M=4, THREAD_N=4: Works on ALL architectures
+    // Shared memory: As[THREAD_M*32][32] + Bs[32][THREAD_N*32]
+    //   THREAD_M=8, THREAD_N=4: 32KB + 16KB = 48KB (at limit on sm_75, plenty on sm_86+)
+    //   THREAD_M=4, THREAD_N=4: 16KB + 16KB = 32KB (safe on all)
+    // Using conservative THREAD_M=4 for compatibility with sm_75
+#if __CUDA_ARCH__ >= 860
+    constexpr int THREAD_M = 8; // Ampere and newer
+#else
+    constexpr int THREAD_M = 4; // Turing and older
+#endif
     constexpr int THREAD_N = 4;
 
     // Warp tiling constants
