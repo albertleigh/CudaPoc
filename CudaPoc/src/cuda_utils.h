@@ -6,6 +6,10 @@
 #include <functional>
 #include <string>
 
+#ifdef __linux__
+#include <nccl.h>
+#endif
+
 namespace cuda_poc {
 #define CUDA_CHECK(call) \
 do { \
@@ -15,6 +19,16 @@ do { \
         exit(EXIT_FAILURE); \
     } \
 } while(0)
+
+#ifdef __linux__
+#define NCCL_CHECK(call) do { \
+    ncclResult_t error = call; \
+    if (error != ncclSuccess) { \
+        std::cerr<< "NCCL error at "<< __FILE__<< ":"<< __LINE__<< " - "<< ncclGetErrorString(error) << "\n"; \
+        exit(EXIT_FAILURE); \
+    } \
+} while(0)
+#endif
 
     // Structure to hold kernel launch configuration
     struct KernelConfig {
@@ -55,9 +69,9 @@ do { \
 
         if (config) {
             std::cout << "Grid dimensions: (" << config->gridDim.x << ", "
-                      << config->gridDim.y << ", " << config->gridDim.z << ")\n";
+                    << config->gridDim.y << ", " << config->gridDim.z << ")\n";
             std::cout << "Block dimensions: (" << config->blockDim.x << ", "
-                      << config->blockDim.y << ", " << config->blockDim.z << ")\n";
+                    << config->blockDim.y << ", " << config->blockDim.z << ")\n";
 
             size_t totalThreads = config->gridDim.x * config->gridDim.y * config->gridDim.z *
                                   config->blockDim.x * config->blockDim.y * config->blockDim.z;
@@ -65,10 +79,10 @@ do { \
         }
 
         std::cout << "GPU memory used: "
-                  << (freeBefore - freeAfter) / (1024.0 * 1024.0) << " MB\n";
+                << (freeBefore - freeAfter) / (1024.0 * 1024.0) << " MB\n";
         std::cout << "GPU memory free: "
-                  << freeAfter / (1024.0 * 1024.0) << " MB / "
-                  << totalAfter / (1024.0 * 1024.0) << " MB\n";
+                << freeAfter / (1024.0 * 1024.0) << " MB / "
+                << totalAfter / (1024.0 * 1024.0) << " MB\n";
 
         CUDA_CHECK(cudaEventDestroy(start));
         CUDA_CHECK(cudaEventDestroy(stop));

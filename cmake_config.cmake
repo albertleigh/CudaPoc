@@ -20,7 +20,6 @@ endif()
 
 message(STATUS "Configuration loaded: CUDA Architecture = ${TARGET_CUDA_ARCH}, C++ Standard = ${TARGET_CXX_STANDARD}")
 
-
 # Set CUDA compiler path for Linux - must be set before project()
 if(UNIX AND NOT APPLE)
     set(CMAKE_CUDA_COMPILER "/usr/local/cuda-13.1/bin/nvcc" CACHE FILEPATH "CUDA compiler")
@@ -29,4 +28,9 @@ if(UNIX AND NOT APPLE)
     set(CUDNN_LIBRARY "/usr/lib/x86_64-linux-gnu/libcudnn.so" CACHE FILEPATH "CUDNN library")
     # Add vcpkg installed packages to CMAKE_PREFIX_PATH
     list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-linux/share")
+endif()
+
+# Set NCCL debug level
+if(UNIX AND NOT APPLE)
+    set(ENV{NCCL_DEBUG} "INFO")
 endif()

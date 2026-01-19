@@ -6,6 +6,23 @@ find_package(CUDAToolkit REQUIRED)
 # Find CUTLASS
 find_package(NvidiaCutlass CONFIG REQUIRED)
 
+# Find NCCL library manually (Linux only)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_library(NCCL_LIBRARY
+        NAMES nccl
+        HINTS
+            ${CUDAToolkit_LIBRARY_DIR}
+            /usr/local/cuda/lib64
+            /usr/local/cuda/lib
+            ${CUDA_TOOLKIT_ROOT_DIR}/lib64
+            ${CUDA_TOOLKIT_ROOT_DIR}/lib
+    )
+
+    if(NOT NCCL_LIBRARY)
+        message(WARNING "NCCL library not found. NCCL features will be disabled.")
+    endif()
+endif()
+
 set(SRCS
         src/add_cuda.cu
         src/depth_cuda.cu
@@ -32,6 +49,13 @@ target_link_libraries(cudaPoc
         CUDA::cublas
         nvidia::cutlass::cutlass
 )
+
+# Link NCCL if found
+if(NCCL_LIBRARY)
+    target_link_libraries(cudaPoc PUBLIC ${NCCL_LIBRARY})
+    message(STATUS "NCCL library found: ${NCCL_LIBRARY}")
+endif()
+
 # Enable separable compilation and relocatable device code for dynamic parallelism
 set_target_properties(cudaPoc PROPERTIES 
     CUDA_SEPARABLE_COMPILATION ON
