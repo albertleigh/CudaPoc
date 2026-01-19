@@ -232,7 +232,8 @@ namespace cuda_poc {
     // C++ callable wrapper function
     template<typename T>
     void vector_sum_v7(T *result, T *input, size_t n, dim3 grid, dim3 block, unsigned int wrap_size) {
-        sum_kernel_v7_reduce_intra_wrap_shuffle<T><<<grid, block>>>(result, input, n, wrap_size);
+        size_t smem_size = ((block.x + wrap_size - 1) / wrap_size) * sizeof(T);
+        sum_kernel_v7_reduce_intra_wrap_shuffle<T><<<grid, block, smem_size>>>(result, input, n, wrap_size);
     }
 
     template void vector_sum_v7<float>(float *result, float *input, size_t n, dim3 grid, dim3 block,
