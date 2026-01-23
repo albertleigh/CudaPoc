@@ -20,4 +20,17 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(nccl_example cudaPoc fmt::fmt-header-only)
     # Enable separable compilation
     set_target_properties(nccl_example PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+    # nccl_mpi_example (requires MPI)
+    find_package(MPI)
+    if(MPI_FOUND)
+        add_executable(nccl_mpi_example nccl_mpi_example.cu)
+        target_link_libraries(nccl_mpi_example cudaPoc fmt::fmt-header-only MPI::MPI_CXX)
+        target_include_directories(nccl_mpi_example PRIVATE ${MPI_CXX_INCLUDE_DIRS})
+        # Enable separable compilation
+        set_target_properties(nccl_mpi_example PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+        message(STATUS "MPI found - building nccl_mpi_example")
+    else()
+        message(STATUS "MPI not found - skipping nccl_mpi_example (install OpenMPI or MPICH to enable)")
+    endif()
 endif()

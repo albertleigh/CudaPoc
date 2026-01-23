@@ -42,12 +42,21 @@ CUDNN_INCLUDE_DIR = C:\Program Files\NVIDIA\CUDNN\v9.18\include\13.1
 CUDNN_LIBRARY = C:\Program Files\NVIDIA\CUDNN\v9.18\lib\13.1\x64\cudnn.lib
 
 - set up for linux:
-export CUDAToolkit_ROOT="/usr/local/cuda-13.1"
-export CMAKE_CUDA_COMPILER="/usr/local/cuda-13.1/bin/nvcc"
-export CUDNN_INCLUDE_DIR="/usr/include/x86_64-linux-gnu"
-export CUDNN_LIBRARY="/usr/lib/x86_64-linux-gnu/libcudnn.so"
+  export CUDAToolkit_ROOT="/usr/local/cuda-13.1"
+  export CMAKE_CUDA_COMPILER="/usr/local/cuda-13.1/bin/nvcc"
+  export CUDNN_INCLUDE_DIR="/usr/include/x86_64-linux-gnu"
+  export CUDNN_LIBRARY="/usr/lib/x86_64-linux-gnu/libcudnn.so"
 - for ncu/nsys
-export PATH="/usr/local/cuda-13.1/bin:$PATH
+  export PATH="/usr/local/cuda-13.1/bin:$PATH
+
+install mpi
+- sudo apt install -y libopenmpi-dev openmpi-bin
+
+- nvidia-smi
+- check Driver Version: 582.16, and processes.
+- then install
+- sudo apt install nvidia-compute-utils-580
+- sudo apt install nvidia-compute-utils-580-server
 
 ### vckpkg setup
 
@@ -95,11 +104,16 @@ vcpkg install
 - ncu --print-details=all --section SpeedOfLight_RooflineChart cuda_poc.exe
 
 - Test gtest (Admin):
-- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0101.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0101.HelloCuda
-- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0103.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0103.CompareInTypes
-- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0301.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0301.*
-- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0302.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0302.*
-- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0401.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0401.*
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0101.ncu-rep -- .\cmake-build-debug\test\test_day01.exe
+  --gtest_filter=CudaPoc_Day0101.HelloCuda
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0103.ncu-rep -- .\cmake-build-debug\test\test_day01.exe
+  --gtest_filter=CudaPoc_Day0103.CompareInTypes
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0301.ncu-rep -- .\cmake-build-debug\test\test_day01.exe
+  --gtest_filter=CudaPoc_Day0301.*
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0302.ncu-rep -- .\cmake-build-debug\test\test_day01.exe
+  --gtest_filter=CudaPoc_Day0302.*
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0401.ncu-rep -- .\cmake-build-debug\test\test_day01.exe
+  --gtest_filter=CudaPoc_Day0401.*
 
 - Test gtest cases (User):
 - .\cmake-build-debug\test\test_day01.exe
@@ -107,7 +121,7 @@ vcpkg install
 - NSight System(nsys):
 - nsys profile -t cuda,nvtx,osrt -o stream -f true ./stream
   then use Nsight system to open stream.nsys-rep
-- 
+-
 - Check topo structure among multiple GPUs:
 - nvidia-smi topo -m
 
