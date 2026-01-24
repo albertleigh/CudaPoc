@@ -120,6 +120,10 @@ vcpkg install
 
 - NSight System(nsys):
 - nsys profile -t cuda,nvtx,osrt -o stream -f true ./stream
+- nsys profile -t cuda,nvtx,osrt -o stream01 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.Stream01
+- nsys profile -t cuda,nvtx,osrt -o stream02 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.Stream02
+- nsys profile -t cuda,nvtx,osrt -o stream03 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.Stream03
+- nsys profile -t cuda,nvtx,osrt -o stream04 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.Stream04
   then use Nsight system to open stream.nsys-rep
 -
 - Check topo structure among multiple GPUs:

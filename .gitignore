@@ -76,3 +76,4 @@ Desktop.ini
 
 # Cuda profiles
 *.ncu-rep
+*.nsys-rep

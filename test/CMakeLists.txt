@@ -64,6 +64,14 @@ target_link_libraries(
 # Disable RDC for test files to avoid nvcc /utf-8 propagation issues
 set_target_properties(test_day05cu PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 
+# Debug-friendly flags for CUDA
+target_compile_options(test_day05cu PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:-G>
+        $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
+        $<$<COMPILE_LANGUAGE:CXX>:-g>
+        $<$<COMPILE_LANGUAGE:CUDA>:-g>
+)
+
 # Enable testing
 enable_testing()
 
