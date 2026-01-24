@@ -28,10 +28,12 @@ set(SRCS
         src/add_one_cuda.cu
         src/depth_cuda.cu
         src/mul_cuda.cu
+        src/multiply_by_cuda.cu
         src/gemm_cuda.cu
         src/pipeline_cuda.cu
         src/sin_cuda.cu
         src/sqrt_cuda.cu
+        src/subtract_by_cuda.cu
         src/sum_cuda.cu
         src/transpose_cuda.cu
         src/cuda_utils.h
