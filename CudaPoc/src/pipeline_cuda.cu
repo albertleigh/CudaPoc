@@ -5,6 +5,7 @@
 
 #include <cooperative_groups.h>
 #include <cuda/pipeline>
+#include <cuda_pipeline.h>
 
 namespace cuda_poc::pipeline {
 #if defined(CUDA_VERSION) && (CUDA_VERSION >= 900)
@@ -109,6 +110,104 @@ void sync_compute(T* global, T* output, uint64_t* clock, size_t copy_count, size
 }
 
 template void sync_compute<int>(int* global,
+                               int* output,
+                               uint64_t* clock,
+                               size_t copy_count,
+                               size_t total_element,
+                               dim3 grid,
+                               dim3 block);
+
+template <typename T>
+__global__ void sync_copy_kernel(T* global, T* output, uint64_t* clock, size_t copy_count, size_t total_element) {
+  extern __shared__ char s[];
+  T* shared = reinterpret_cast<T*>(s);
+
+  const size_t block_offset = blockIdx.x * blockDim.x * copy_count;
+  uint64_t clock_start = clock64();
+
+  for (size_t i = 0; i < copy_count; ++i) {
+    const size_t local_idx = i * blockDim.x + threadIdx.x;
+    const size_t global_idx = block_offset + local_idx;
+    if (global_idx < total_element) {
+      shared[local_idx] = global[global_idx];
+    }
+  }
+
+  __syncthreads();
+
+  uint64_t clock_end = clock64();
+
+  if (threadIdx.x == 0) {
+    atomicAdd(reinterpret_cast<unsigned long long*>(clock), clock_end - clock_start);
+  }
+
+  for (size_t i = 0; i < copy_count; ++i) {
+    const size_t local_idx = i * blockDim.x + threadIdx.x;
+    const size_t global_idx = block_offset + local_idx;
+    if (global_idx < total_element) {
+      output[global_idx] = shared[local_idx];
+    }
+  }
+}
+
+template <typename T>
+void sync_copy(T* global, T* output, uint64_t* clock, size_t copy_count, size_t total_element, dim3 grid, dim3 block) {
+  size_t smeme_size = copy_count * block.x * sizeof(T);
+  sync_copy_kernel<T><<<grid, block, smeme_size>>>(global, output, clock, copy_count, total_element);
+}
+
+template void sync_copy<int>(int* global,
+                               int* output,
+                               uint64_t* clock,
+                               size_t copy_count,
+                               size_t total_element,
+                               dim3 grid,
+                               dim3 block);
+
+// pipeline status: issue -> commit -> wait
+template <typename T>
+__global__ void async_copy_kernel(T* global, T* output, uint64_t* clock, size_t copy_count, size_t total_element) {
+  extern __shared__ char s[];
+  T* shared = reinterpret_cast<T*>(s);
+
+  const size_t block_offset = blockIdx.x * blockDim.x * copy_count;
+  uint64_t clock_start = clock64();
+
+  for (size_t i = 0; i < copy_count; ++i) {
+    const size_t local_idx = i * blockDim.x + threadIdx.x;
+    const size_t global_idx = block_offset + local_idx;
+    if (global_idx < total_element) {
+      // `__pipeline_memcpy_async` can only copy from global to shared memory, and size_and_align must be of 4, 8, or 16;
+      __pipeline_memcpy_async(&shared[local_idx], &global[global_idx], sizeof(T));
+    }
+  }
+
+  __pipeline_commit();
+  // Waits for all but the last N async operations to finish.
+  __pipeline_wait_prior(0);
+
+  uint64_t clock_end = clock64();
+
+  if (threadIdx.x == 0) {
+    atomicAdd(reinterpret_cast<unsigned long long*>(clock), clock_end - clock_start);
+  }
+
+  for (size_t i = 0; i < copy_count; ++i) {
+    const size_t local_idx = i * blockDim.x + threadIdx.x;
+    const size_t global_idx = block_offset + local_idx;
+    if (global_idx < total_element) {
+      output[global_idx] = shared[local_idx];
+    }
+  }
+}
+
+template <typename T>
+void async_copy(T* global, T* output, uint64_t* clock, size_t copy_count, size_t total_element, dim3 grid, dim3 block) {
+  size_t smeme_size = copy_count * block.x * sizeof(T);
+  async_copy_kernel<T><<<grid, block, smeme_size>>>(global, output, clock, copy_count, total_element);
+}
+
+template void async_copy<int>(int* global,
                                int* output,
                                uint64_t* clock,
                                size_t copy_count,
