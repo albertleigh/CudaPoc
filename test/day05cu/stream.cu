@@ -332,4 +332,108 @@ TEST_F(CudaPoc_Day0502_Stream, AllocateInPinMem) {
   }
 }
 
+TEST_F(CudaPoc_Day0502_Stream, AllocateInMangedMem) {
+  constexpr size_t SIZE = 1 << 20;  // 4MB for float
+  size_t size_bytes = SIZE * sizeof(float);
+
+  dim3 block_dim(256);
+  dim3 grid_dim((SIZE + block_dim.x - 1) / block_dim.x);
+
+  // float - unified memory (single pointer for host and device)
+  // page fault might impact perf
+  {
+    float *data_a, *data_b, *data_c;
+    CUDA_CHECK(cudaMallocManaged(&data_a, size_bytes));
+    CUDA_CHECK(cudaMallocManaged(&data_b, size_bytes));
+    CUDA_CHECK(cudaMallocManaged(&data_c, size_bytes));
+
+    // Initialize memory from host - same pointer works everywhere!
+    for (size_t i = 0; i < SIZE; ++i) {
+      data_a[i] = 1.0f;
+      data_b[i] = 2.0f;
+      data_c[i] = 0.0f;
+    }
+
+    // No cudaHostGetDevicePointer needed - same pointer works on device!
+
+    KernelConfig config(grid_dim, block_dim);
+    timeKernel(
+        "vector_add_unified_memoryed",
+        [&]() {
+          // Use same pointers directly - CUDA runtime handles migration
+          size_t step = block_dim.x * grid_dim.x;
+          vector_add_kernel<<<grid_dim, block_dim>>>(data_c, data_a, data_b, SIZE, step);
+          CUDA_CHECK(cudaGetLastError());
+          CUDA_CHECK(cudaDeviceSynchronize());
+          // Results automatically accessible from host
+        },
+        &config);
+    std::cout << "Size used: " << SIZE << '\n';
+
+    // Direct access from host - no copy needed!
+    std::vector<float> result_vec(data_c, data_c + SIZE);
+    assert_vector_equal(result_vec, SIZE, 3.0f);
+
+    free_device_ptr(data_a, data_b, data_c);
+  }
+}
+
+// TEST_F(CudaPoc_Day0502_Stream, AllocateInMangedMemWithAdvise) {
+//   constexpr size_t SIZE = 1 << 20;  // 4MB for float
+//   size_t size_bytes = SIZE * sizeof(float);
+//   int device = -1;
+//   cudaGetDevice(&device);
+//
+//   dim3 block_dim(256);
+//   dim3 grid_dim((SIZE + block_dim.x - 1) / block_dim.x);
+//
+//   // float - unified memory (single pointer for host and device)
+//   // page fault might impact perf
+//   {
+//     float *data_a, *data_b, *data_c;
+//     CUDA_CHECK(cudaMallocManaged(&data_a, size_bytes));
+//     CUDA_CHECK(cudaMallocManaged(&data_b, size_bytes));
+//     CUDA_CHECK(cudaMallocManaged(&data_c, size_bytes));
+//
+//     // Initialize memory from host - same pointer works everywhere!
+//     for (size_t i = 0; i < SIZE; ++i) {
+//       data_a[i] = 1.0f;
+//       data_b[i] = 2.0f;
+//       data_c[i] = 0.0f;
+//     }
+//
+//     // Note: cudaMemAdvise and cudaMemPrefetchAsync API changed in some CUDA versions
+//     // Commenting out to avoid type compatibility issues with CUDA 13.1
+//     // Unified memory will still work, just with automatic on-demand migration
+//     // CUDA_CHECK(cudaMemAdvise(data_a, size_bytes, cudaMemAdviseSetReadMostly, cudaCpuDeviceId));
+//     // CUDA_CHECK(cudaMemAdvise(data_b, size_bytes, cudaMemAdviseSetReadMostly, cudaCpuDeviceId));
+//     // CUDA_CHECK(cudaMemAdvise(data_c, size_bytes, cudaMemAdviseSetPreferredLocation, device));
+//     // CUDA_CHECK(cudaMemPrefetchAsync(data_a, size_bytes, device, 0));
+//     // CUDA_CHECK(cudaMemPrefetchAsync(data_b, size_bytes, device, 0));
+//     // CUDA_CHECK(cudaMemPrefetchAsync(data_c, size_bytes, device, 0));
+//
+//     // No cudaHostGetDevicePointer needed - same pointer works on device!
+//
+//     KernelConfig config(grid_dim, block_dim);
+//     timeKernel(
+//         "vector_add_unified_memoryed",
+//         [&]() {
+//           // Use same pointers directly - CUDA runtime handles migration
+//           size_t step = block_dim.x * grid_dim.x;
+//           vector_add_kernel<<<grid_dim, block_dim>>>(data_c, data_a, data_b, SIZE, step);
+//           CUDA_CHECK(cudaGetLastError());
+//           CUDA_CHECK(cudaDeviceSynchronize());
+//           // Results automatically accessible from host
+//         },
+//         &config);
+//     std::cout << "Size used: " << SIZE << '\n';
+//
+//     // Direct access from host - no copy needed!
+//     std::vector<float> result_vec(data_c, data_c + SIZE);
+//     assert_vector_equal(result_vec, SIZE, 3.0f);
+//
+//     free_device_ptr(data_a, data_b, data_c);
+//   }
+// }
+
 }  // namespace cuda_poc::day05cu

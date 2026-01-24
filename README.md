@@ -127,6 +127,7 @@ vcpkg install
 - nsys profile -t cuda,nvtx,osrt -o AllocateInStream01 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInStream01
 - nsys profile -t cuda,nvtx,osrt -o AllocateInStream02 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInStream02
 - nsys profile -t cuda,nvtx,osrt -o AllocateInPinMem -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInPinMem
+- nsys profile -t cuda,nvtx,osrt -o AllocateInMangedMem -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInMangedMem
 
 then use Nsight system to open stream.nsys-rep
 
