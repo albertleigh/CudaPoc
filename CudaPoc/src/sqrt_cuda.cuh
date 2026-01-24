@@ -5,13 +5,13 @@
 #pragma once
 
 #include <cuda_runtime.h>
-namespace cuda_poc {
+namespace cuda_poc::inplace {
 // CUDA kernel (callable from .cu files only)
 template <typename T>
-__global__ void sqrt_kernel(T* c, const T* a, size_t n, size_t step);
+__global__ void sqrt_kernel(T* a, size_t n, size_t step);
 
 // C++ callable wrapper function
 template <typename T>
-void vector_sqrt(T* c, const T* a, size_t n, dim3 grid_dim, dim3 block_dim);
+void vector_sqrt(T* a, size_t n, dim3 grid_dim, dim3 block_dim);
 
-}  // namespace cuda_poc
+}  // namespace cuda_poc::inplace

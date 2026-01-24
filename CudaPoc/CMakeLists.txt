@@ -31,6 +31,7 @@ set(SRCS
         src/multiply_by_cuda.cu
         src/gemm_cuda.cu
         src/pipeline_cuda.cu
+        src/sample_graph_cuda.cu
         src/sin_cuda.cu
         src/sqrt_cuda.cu
         src/subtract_by_cuda.cu

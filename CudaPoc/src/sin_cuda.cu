@@ -7,7 +7,7 @@
 #include <type_traits>
 #include "cuda_fp16.h"
 
-namespace cuda_poc {
+namespace cuda_poc::inplace {
 
 template <typename T>
 __device__ T sin_op(const T& a) {
@@ -31,27 +31,27 @@ __device__ T sin_op(const T& a) {
 }
 
 template <typename T>
-__global__ void sin_kernel(T* c, const T* a, size_t n, size_t step) {
+__global__ void sin_kernel(T* a, size_t n, size_t step) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   for (size_t i = idx; i < n; i += step) {
-    c[i] = sin_op(a[i]);
+    a[i] = sin_op(a[i]);
   }
 }
 
 // C++ callable wrapper function
 template <typename T>
-void vector_sin(T* c, const T* a, size_t n, dim3 grid_dim, dim3 block_dim) {
+void vector_sin(T* a, size_t n, dim3 grid_dim, dim3 block_dim) {
   size_t step = block_dim.x * grid_dim.x;
-  sin_kernel<T><<<grid_dim, block_dim>>>(c, a, n, step);
+  sin_kernel<T><<<grid_dim, block_dim>>>(a, n, step);
 }
 
 // Explicit template instantiations
-template void vector_sin<float>(float* c, const float* a, size_t n, dim3 grid_dim, dim3 block_dim);
-template void vector_sin<float2>(float2* c, const float2* a, size_t n, dim3 grid_dim, dim3 block_dim);
-template void vector_sin<float3>(float3* c, const float3* a, size_t n, dim3 grid_dim, dim3 block_dim);
-template void vector_sin<float4>(float4* c, const float4* a, size_t n, dim3 grid_dim, dim3 block_dim);
-template void vector_sin<double>(double* c, const double* a, size_t n, dim3 grid_dim, dim3 block_dim);
-template void vector_sin<half>(half* c, const half* a, size_t n, dim3 grid_dim, dim3 block_dim);
-template void vector_sin<half2>(half2* c, const half2* a, size_t n, dim3 grid_dim, dim3 block_dim);
+template void vector_sin<float>(float* a, size_t n, dim3 grid_dim, dim3 block_dim);
+template void vector_sin<float2>(float2* a, size_t n, dim3 grid_dim, dim3 block_dim);
+template void vector_sin<float3>(float3* a, size_t n, dim3 grid_dim, dim3 block_dim);
+template void vector_sin<float4>(float4* a, size_t n, dim3 grid_dim, dim3 block_dim);
+template void vector_sin<double>(double* a, size_t n, dim3 grid_dim, dim3 block_dim);
+template void vector_sin<half>(half* a, size_t n, dim3 grid_dim, dim3 block_dim);
+template void vector_sin<half2>(half2* a, size_t n, dim3 grid_dim, dim3 block_dim);
 
 }  // namespace cuda_poc
