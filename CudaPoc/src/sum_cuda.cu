@@ -72,9 +72,9 @@ namespace cuda_poc {
             T wrap_sum = 0;
             const size_t total_elements = ((n - idx) + step - 1) / step;
 
-            for (size_t linera_idx = 0; linera_idx < total_elements * 32; linera_idx++) {
-                const size_t segment = linera_idx / 32;
-                const size_t lane_offset = linera_idx % 32;
+            for (size_t linera_idx = 0; linera_idx < total_elements * wrap_size; linera_idx++) {
+                const size_t segment = linera_idx / wrap_size;
+                const size_t lane_offset = linera_idx % wrap_size;
                 const size_t input_idx = idx + segment * step + lane_offset;
                 if (input_idx < n) {
                     wrap_sum += input[input_idx];
