@@ -60,6 +60,16 @@ class CudaPoc_Day0502_Stream : public ::testing::Test {
   }
 
   template <typename... Args>
+  void free_host_ptr(Args*... ptrs) {
+    (([&]() {
+       if (ptrs) {
+         CUDA_CHECK(cudaFreeHost(ptrs));
+       }
+     })(),
+     ...);
+  }
+
+  template <typename... Args>
   void free_async_device_ptr(cudaStream_t stream, Args*... ptrs) {
     (([&]() {
        if (ptrs) {
@@ -270,6 +280,55 @@ TEST_F(CudaPoc_Day0502_Stream, AllocateInStream02) {
 
     assert_vector_equal(h_c, SIZE, 3.0f);
     free_async_device_ptr(stream1, d_a, d_b, d_c);
+  }
+}
+
+TEST_F(CudaPoc_Day0502_Stream, AllocateInPinMem) {
+  constexpr size_t SIZE = 1 << 20;  // 4MB for float
+  size_t size_bytes = SIZE * sizeof(float);
+
+  dim3 block_dim(256);
+  dim3 grid_dim((SIZE + block_dim.x - 1) / block_dim.x);
+
+  // float - zero-copy with mapped pinned memory
+  {
+    float *h_a, *h_b, *h_c;
+    CUDA_CHECK(cudaHostAlloc(&h_a, size_bytes, cudaHostAllocMapped));
+    CUDA_CHECK(cudaHostAlloc(&h_b, size_bytes, cudaHostAllocMapped));
+    CUDA_CHECK(cudaHostAlloc(&h_c, size_bytes, cudaHostAllocMapped));
+
+    // Initialize host memory
+    for (size_t i = 0; i < SIZE; ++i) {
+      h_a[i] = 1.0f;
+      h_b[i] = 2.0f;
+      h_c[i] = 0.0f;
+    }
+
+    // Get device pointers for zero-copy access
+    float *d_a, *d_b, *d_c;
+    CUDA_CHECK(cudaHostGetDevicePointer(&d_a, h_a, 0));
+    CUDA_CHECK(cudaHostGetDevicePointer(&d_b, h_b, 0));
+    CUDA_CHECK(cudaHostGetDevicePointer(&d_c, h_c, 0));
+
+    KernelConfig config(grid_dim, block_dim);
+    timeKernel(
+        "vector_add_pinned_zerocopy",
+        [&]() {
+          // No memcpy needed - kernel directly accesses host memory via PCIe
+          size_t step = block_dim.x * grid_dim.x;
+          vector_add_kernel<<<grid_dim, block_dim>>>(d_c, d_a, d_b, SIZE, step);
+          CUDA_CHECK(cudaGetLastError());
+          CUDA_CHECK(cudaDeviceSynchronize());
+          // Results automatically in h_c
+        },
+        &config);
+    std::cout << "Size used: " << SIZE << '\n';
+
+    // Convert to vector for assertion (or create a pointer-based assert function)
+    std::vector<float> h_c_vec(h_c, h_c + SIZE);
+    assert_vector_equal(h_c_vec, SIZE, 3.0f);
+    
+    free_host_ptr(h_a, h_b, h_c);
   }
 }
 

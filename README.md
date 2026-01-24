@@ -126,7 +126,11 @@ vcpkg install
 - nsys profile -t cuda,nvtx,osrt -o stream04 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.Stream04
 - nsys profile -t cuda,nvtx,osrt -o AllocateInStream01 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInStream01
 - nsys profile -t cuda,nvtx,osrt -o AllocateInStream02 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInStream02
-  then use Nsight system to open stream.nsys-rep
+- nsys profile -t cuda,nvtx,osrt -o AllocateInPinMem -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInPinMem
+
+then use Nsight system to open stream.nsys-rep
+
+
 -
 - Check topo structure among multiple GPUs:
 - nvidia-smi topo -m
