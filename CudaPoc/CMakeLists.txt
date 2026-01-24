@@ -58,6 +58,14 @@ target_link_libraries(cudaPoc
         nvidia::cutlass::cutlass
 )
 
+# Debug-friendly flags for CUDA
+target_compile_options(cudaPoc PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:-G>
+        $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
+        $<$<COMPILE_LANGUAGE:CXX>:-g>
+        $<$<COMPILE_LANGUAGE:CUDA>:-g>
+)
+
 # Link NCCL if found
 if (NCCL_LIBRARY)
     target_link_libraries(cudaPoc PUBLIC ${NCCL_LIBRARY})

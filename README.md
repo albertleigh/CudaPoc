@@ -135,6 +135,18 @@ then use Nsight system to open stream.nsys-rep
 -
 - Check topo structure among multiple GPUs:
 - nvidia-smi topo -m
+GPU0    CPU Affinity    NUMA Affinity   GPU NUMA ID
+GPU0     X                              N/A
+
+Legend:
+
+X    = Self
+SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+PIX  = Connection traversing at most a single PCIe bridge
+NV#  = Connection traversing a bonded set of # NVLinks
 
 ### Sample roofline chart:
 
