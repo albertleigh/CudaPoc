@@ -58,4 +58,8 @@ namespace cuda_poc::linear {
     //  cublasHandle_t handle is already a pointer type, so pass it directly (not &handle)
     template<typename T>
     void linear_v6(cublasHandle_t handle, int M, int N, int K, T alpha, const T *A, const T *B, T beta, T *C);
+
+    // CuTe GEMM implementation
+    template<typename T>
+    void linear_v7(int M, int N, int K, T alpha, const T *A, const T *B, T beta, T *C);
 } // namespace cuda_poc::linear

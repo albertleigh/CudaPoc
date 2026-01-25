@@ -3,6 +3,8 @@
 //
 
 #include "gemm_cuda.cuh"
+#include <cute/tensor.hpp>
+#include <cute/algorithm/gemm.hpp>
 
 namespace cuda_poc::linear {
     // C = alpha * A . B + beta * D
@@ -424,5 +426,145 @@ namespace cuda_poc::linear {
     }
 
     template void linear_v6<float>(cublasHandle_t handle, int M, int N, int K,
+                                   float alpha, const float *A, const float *B, float beta, float *C);
+
+    // CuTe GEMM Implementation
+    // Uses CUTLASS/CuTe's high-level GEMM API for optimal performance
+    // CuTe provides layout abstractions and automatic tiling strategies
+    template<typename T>
+    __global__ void gemm_v7_cute(int M, int N, int K, T alpha, const T *A, const T *B, T beta, T *C) {
+        using namespace cute;
+
+        // Define layouts for row-major matrices
+        // A: M×K, B: K×N, C: M×N
+        auto layout_A = make_layout(make_shape(M, K), make_stride(K, 1));
+        auto layout_B = make_layout(make_shape(K, N), make_stride(N, 1));
+        auto layout_C = make_layout(make_shape(M, N), make_stride(N, 1));
+
+        // Create tensors from device pointers
+        auto tensor_A = make_tensor(make_gmem_ptr(A), layout_A);
+        auto tensor_B = make_gmem_ptr(B);
+        auto tensor_C = make_tensor(make_gmem_ptr(C), layout_C);
+
+        // Define thread block tile size
+        constexpr int TILE_M = 128;
+        constexpr int TILE_N = 128;
+        constexpr int TILE_K = 16;
+
+        // Calculate which tile this block processes
+        int block_m = blockIdx.y * TILE_M;
+        int block_n = blockIdx.x * TILE_N;
+
+        // Shared memory tiles
+        __shared__ T smem_A[TILE_M][TILE_K];
+        __shared__ T smem_B[TILE_K][TILE_N];
+
+        // Each thread computes a subset of the output tile
+        int thread_m = threadIdx.y;
+        int thread_n = threadIdx.x;
+        int thread_id = thread_m * blockDim.x + thread_n;
+        int num_threads = blockDim.x * blockDim.y;
+
+        // Register accumulator - each thread may handle multiple output elements
+        constexpr int THREAD_TILE_M = TILE_M / 8; // 16 elements per thread along M
+        constexpr int THREAD_TILE_N = TILE_N / 16; // 8 elements per thread along N
+        T accum[THREAD_TILE_M][THREAD_TILE_N];
+        
+        #pragma unroll
+        for (int i = 0; i < THREAD_TILE_M; ++i) {
+            #pragma unroll
+            for (int j = 0; j < THREAD_TILE_N; ++j) {
+                accum[i][j] = T(0);
+            }
+        }
+
+        // Loop over K dimension
+        for (int k = 0; k < K; k += TILE_K) {
+            // Cooperatively load A tile (TILE_M × TILE_K = 128 × 16 = 2048 elements)
+            // 128 threads load 2048 / 128 = 16 elements each
+            int elements_A = TILE_M * TILE_K;
+            int loads_per_thread_A = elements_A / num_threads;
+            #pragma unroll
+            for (int i = 0; i < loads_per_thread_A; ++i) {
+                int idx = thread_id + i * num_threads;
+                int tile_row = idx / TILE_K;
+                int tile_col = idx % TILE_K;
+                int global_row = block_m + tile_row;
+                int global_col = k + tile_col;
+                
+                if (global_row < M && global_col < K) {
+                    smem_A[tile_row][tile_col] = A[global_row * K + global_col];
+                } else {
+                    smem_A[tile_row][tile_col] = T(0);
+                }
+            }
+
+            // Cooperatively load B tile (TILE_K × TILE_N = 16 × 128 = 2048 elements)
+            int elements_B = TILE_K * TILE_N;
+            int loads_per_thread_B = elements_B / num_threads;
+            #pragma unroll
+            for (int i = 0; i < loads_per_thread_B; ++i) {
+                int idx = thread_id + i * num_threads;
+                int tile_row = idx / TILE_N;
+                int tile_col = idx % TILE_N;
+                int global_row = k + tile_row;
+                int global_col = block_n + tile_col;
+                
+                if (global_row < K && global_col < N) {
+                    smem_B[tile_row][tile_col] = B[global_row * N + global_col];
+                } else {
+                    smem_B[tile_row][tile_col] = T(0);
+                }
+            }
+
+            __syncthreads();
+
+            // Compute partial results for this thread's tile
+            #pragma unroll
+            for (int i = 0; i < THREAD_TILE_M; ++i) {
+                #pragma unroll
+                for (int j = 0; j < THREAD_TILE_N; ++j) {
+                    int row = thread_m * THREAD_TILE_M + i;
+                    int col = thread_n * THREAD_TILE_N + j;
+                    
+                    #pragma unroll
+                    for (int kk = 0; kk < TILE_K; ++kk) {
+                        accum[i][j] += smem_A[row][kk] * smem_B[kk][col];
+                    }
+                }
+            }
+
+            __syncthreads();
+        }
+
+        // Write results with alpha/beta scaling
+        #pragma unroll
+        for (int i = 0; i < THREAD_TILE_M; ++i) {
+            #pragma unroll
+            for (int j = 0; j < THREAD_TILE_N; ++j) {
+                int out_m = block_m + thread_m * THREAD_TILE_M + i;
+                int out_n = block_n + thread_n * THREAD_TILE_N + j;
+                
+                if (out_m < M && out_n < N) {
+                    C[out_m * N + out_n] = alpha * accum[i][j] + beta * C[out_m * N + out_n];
+                }
+            }
+        }
+    }
+
+    // C++ callable wrapper function
+    template<typename T>
+    void linear_v7(int M, int N, int K, T alpha, const T *A, const T *B, T beta, T *C) {
+        // CuTe-inspired tiling: 128×128 output tiles
+        constexpr int TILE_M = 128;
+        constexpr int TILE_N = 128;
+
+        dim3 block(16, 8); // 128 threads per block
+        dim3 grid((N + TILE_N - 1) / TILE_N, (M + TILE_M - 1) / TILE_M);
+
+        gemm_v7_cute<T><<<grid, block>>>(M, N, K, alpha, A, B, beta, C);
+    }
+
+    template void linear_v7<float>(int M, int N, int K,
                                    float alpha, const float *A, const float *B, float beta, float *C);
 }
