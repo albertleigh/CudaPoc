@@ -50,13 +50,9 @@ using namespace cuda_poc::pipeline;
 // GPU memory free: 3270.25 MB / 4095.56 MB
 //
 // === Kernel: sync_compute ===
-// Execution time: 0.155936 ms  <- You need heavier computation. Try replacing the trivial +1 with something more expensive:
-// Grid dimensions: (4, 1, 1)
-// Block dimensions: (256, 1, 1)
-// Total threads: 1024
-// GPU memory used: 0 MB
-// GPU memory free: 3270.25 MB / 4095.56 MB
-// Clock cycles: 7099 (0.004619 ms)
+// Execution time: 0.155936 ms  <- You need heavier computation. Try replacing the trivial +1 with something more
+// expensive: Grid dimensions: (4, 1, 1) Block dimensions: (256, 1, 1) Total threads: 1024 GPU memory used: 0 MB GPU
+// memory free: 3270.25 MB / 4095.56 MB Clock cycles: 7099 (0.004619 ms)
 //
 // === Kernel: SyncCopy ===
 // Execution time: 49.9168 ms
@@ -321,6 +317,5 @@ TEST_F(CudaPoc_Day0501_Pipeline, SyncCopy) {
 TEST_F(CudaPoc_Day0501_Pipeline, AsyncCopy) {
   test_copy_with_kernel_fun("AsyncCopy", async_copy<int>);
 }
-
 
 }  // namespace cuda_poc::day01

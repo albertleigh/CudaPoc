@@ -59,4 +59,4 @@ static __device__ __forceinline__ uint16_t HtoBE16(uint16_t x) {
   return static_cast<uint16_t>(d);
 }
 
-}
+}  // namespace cuda_poc::device

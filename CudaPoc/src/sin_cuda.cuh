@@ -15,4 +15,4 @@ __global__ void sin_kernel(T* a, size_t n, size_t step);
 template <typename T>
 void vector_sin(T* a, size_t n, dim3 grid_dim, dim3 block_dim);
 
-}  // namespace cuda_poc
+}  // namespace cuda_poc::inplace

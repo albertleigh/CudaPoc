@@ -2,11 +2,11 @@
 // Created by ali on 1/25/26.
 //
 
-#include <gtest/gtest.h>
-#include "sample_graph_cuda.cuh"
-#include "cuda_utils.h"
 #include <fmt/format.h>
+#include <gtest/gtest.h>
 #include <cmath>
+#include "cuda_utils.h"
+#include "sample_graph_cuda.cuh"
 
 namespace cuda_poc::day01 {
 using namespace cuda_poc::sample_graph;

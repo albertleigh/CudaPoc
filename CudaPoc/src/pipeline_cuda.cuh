@@ -14,7 +14,13 @@ void compute_with_staging(int* global_out, int const* global_in, size_t size, si
 #endif
 
 template <typename T>
-void sync_compute(T* global, T* output, uint64_t* clock, size_t copy_count, size_t total_element, dim3 grid, dim3 block);
+void sync_compute(T* global,
+                  T* output,
+                  uint64_t* clock,
+                  size_t copy_count,
+                  size_t total_element,
+                  dim3 grid,
+                  dim3 block);
 
 template <typename T>
 void sync_copy(T* global, T* output, uint64_t* clock, size_t copy_count, size_t total_element, dim3 grid, dim3 block);

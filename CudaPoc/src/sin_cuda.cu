@@ -54,4 +54,4 @@ template void vector_sin<double>(double* a, size_t n, dim3 grid_dim, dim3 block_
 template void vector_sin<half>(half* a, size_t n, dim3 grid_dim, dim3 block_dim);
 template void vector_sin<half2>(half2* a, size_t n, dim3 grid_dim, dim3 block_dim);
 
-}  // namespace cuda_poc
+}  // namespace cuda_poc::inplace

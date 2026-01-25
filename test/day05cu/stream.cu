@@ -327,7 +327,7 @@ TEST_F(CudaPoc_Day0502_Stream, AllocateInPinMem) {
     // Convert to vector for assertion (or create a pointer-based assert function)
     std::vector<float> h_c_vec(h_c, h_c + SIZE);
     assert_vector_equal(h_c_vec, SIZE, 3.0f);
-    
+
     free_host_ptr(h_a, h_b, h_c);
   }
 }

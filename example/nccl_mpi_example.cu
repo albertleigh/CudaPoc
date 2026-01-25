@@ -1,9 +1,9 @@
 //
 // Created by Albert Li on 1/20/26.
 //
+#include <cuda_runtime.h>
 #include <mpi.h>
 #include <nccl.h>
-#include <cuda_runtime.h>
 
 __global__ void my_kernel(float* data, int rank) {
   // A dummy workload to keep the GPU busy
@@ -23,7 +23,8 @@ int main(int argc, char* argv[]) {
 
   // Generate NCCL ID on rank 0 and broadcast it
   ncclUniqueId id;
-  if (rank == 0) ncclGetUniqueId(&id);
+  if (rank == 0)
+    ncclGetUniqueId(&id);
   MPI_Bcast(&id, sizeof(id), MPI_BYTE, 0, MPI_COMM_WORLD);
 
   ncclComm_t comm;
@@ -31,7 +32,7 @@ int main(int argc, char* argv[]) {
   ncclCommInitRank(&comm, nranks, id, rank);
   cudaStreamCreate(&s);
 
-  float *d_ptr;
+  float* d_ptr;
   cudaMalloc(&d_ptr, sizeof(float));
 
   // Parallel Execution: Each process launches a kernel

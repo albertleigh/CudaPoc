@@ -4,14 +4,14 @@
 #include "pipeline_cuda.cuh"
 
 #include <cooperative_groups.h>
-#include <cuda/pipeline>
 #include <cuda_pipeline.h>
+#include <cuda/pipeline>
 
 namespace cuda_poc::pipeline {
 #if defined(CUDA_VERSION) && (CUDA_VERSION >= 900)
 
 // Dummy compute function that processes data from shared memory to global memory
-template<typename T>
+template <typename T>
 __device__ void compute(T* global_out, T const* shared_in) {
   auto block = cooperative_groups::this_thread_block();
   size_t tid = block.thread_rank();
@@ -104,18 +104,24 @@ __global__ void sync_compute_kernel(T* global, T* output, uint64_t* clock, size_
 }
 
 template <typename T>
-void sync_compute(T* global, T* output, uint64_t* clock, size_t copy_count, size_t total_element, dim3 grid, dim3 block) {
+void sync_compute(T* global,
+                  T* output,
+                  uint64_t* clock,
+                  size_t copy_count,
+                  size_t total_element,
+                  dim3 grid,
+                  dim3 block) {
   size_t smeme_size = copy_count * block.x * sizeof(T);
   sync_compute_kernel<T><<<grid, block, smeme_size>>>(global, output, clock, copy_count, total_element);
 }
 
 template void sync_compute<int>(int* global,
-                               int* output,
-                               uint64_t* clock,
-                               size_t copy_count,
-                               size_t total_element,
-                               dim3 grid,
-                               dim3 block);
+                                int* output,
+                                uint64_t* clock,
+                                size_t copy_count,
+                                size_t total_element,
+                                dim3 grid,
+                                dim3 block);
 
 template <typename T>
 __global__ void sync_copy_kernel(T* global, T* output, uint64_t* clock, size_t copy_count, size_t total_element) {
@@ -157,12 +163,12 @@ void sync_copy(T* global, T* output, uint64_t* clock, size_t copy_count, size_t 
 }
 
 template void sync_copy<int>(int* global,
-                               int* output,
-                               uint64_t* clock,
-                               size_t copy_count,
-                               size_t total_element,
-                               dim3 grid,
-                               dim3 block);
+                             int* output,
+                             uint64_t* clock,
+                             size_t copy_count,
+                             size_t total_element,
+                             dim3 grid,
+                             dim3 block);
 
 // pipeline status: issue -> commit -> wait
 template <typename T>
@@ -177,7 +183,8 @@ __global__ void async_copy_kernel(T* global, T* output, uint64_t* clock, size_t 
     const size_t local_idx = i * blockDim.x + threadIdx.x;
     const size_t global_idx = block_offset + local_idx;
     if (global_idx < total_element) {
-      // `__pipeline_memcpy_async` can only copy from global to shared memory, and size_and_align must be of 4, 8, or 16;
+      // `__pipeline_memcpy_async` can only copy from global to shared memory, and size_and_align must be of 4, 8, or
+      // 16;
       __pipeline_memcpy_async(&shared[local_idx], &global[global_idx], sizeof(T));
     }
   }
@@ -208,11 +215,11 @@ void async_copy(T* global, T* output, uint64_t* clock, size_t copy_count, size_t
 }
 
 template void async_copy<int>(int* global,
-                               int* output,
-                               uint64_t* clock,
-                               size_t copy_count,
-                               size_t total_element,
-                               dim3 grid,
-                               dim3 block);
+                              int* output,
+                              uint64_t* clock,
+                              size_t copy_count,
+                              size_t total_element,
+                              dim3 grid,
+                              dim3 block);
 
 }  // namespace cuda_poc::pipeline
