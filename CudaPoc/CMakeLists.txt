@@ -27,6 +27,7 @@ set(SRCS
         src/add_cuda.cu
         src/add_one_cuda.cu
         src/depth_cuda.cu
+        src/device_cuda.cu
         src/mul_cuda.cu
         src/multiply_by_cuda.cu
         src/gemm_cuda.cu
