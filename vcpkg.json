@@ -1,11 +1,13 @@
 {
   "dependencies": [
     "gtest",
-    "fmt"
+    "fmt",
+    "nvidia-cutlass"
   ],
   "overrides": [
     { "name": "gtest", "version": "1.15.2" },
-    { "name": "fmt", "version": "11.0.2" }
+    { "name": "fmt", "version": "11.0.2" },
+    { "name": "nvidia-cutlass", "version": "3.8.0" }
   ],
   "version": "0.0.1",
   "name": "cuda-poc"

@@ -30,10 +30,33 @@ https://en.wikipedia.org/wiki/CUDA#GPUs_supported
 ### setup environment:
 
 CMAKE:
+
 CUDA TOOLKIT: https://developer.nvidia.com/cuda/toolkit
 Set up environment variables like:
 CUDAToolkit_ROOT = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1
 CMAKE_CUDA_COMPILER = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1/bin/nvcc.exe
+
+Please download CUDNN from official sources (https://developer.nvidia.com/cudnn) and install it
+Could NOT find CUDNN (missing: CUDNN_INCLUDE_DIR CUDNN_LIBRARY)
+CUDNN_INCLUDE_DIR = C:\Program Files\NVIDIA\CUDNN\v9.18\include\13.1
+CUDNN_LIBRARY = C:\Program Files\NVIDIA\CUDNN\v9.18\lib\13.1\x64\cudnn.lib
+
+- set up for linux:
+  export CUDAToolkit_ROOT="/usr/local/cuda-13.1"
+  export CMAKE_CUDA_COMPILER="/usr/local/cuda-13.1/bin/nvcc"
+  export CUDNN_INCLUDE_DIR="/usr/include/x86_64-linux-gnu"
+  export CUDNN_LIBRARY="/usr/lib/x86_64-linux-gnu/libcudnn.so"
+- for ncu/nsys
+  export PATH="/usr/local/cuda-13.1/bin:$PATH
+
+install mpi
+- sudo apt install -y libopenmpi-dev openmpi-bin
+
+- nvidia-smi
+- check Driver Version: 582.16, and processes.
+- then install
+- sudo apt install nvidia-compute-utils-580
+- sudo apt install nvidia-compute-utils-580-server
 
 ### vckpkg setup
 
@@ -51,6 +74,7 @@ export VCPKG_ROOT=""/path/to/vcpkg"
 - vcpkg install gtest
 
 and set `-DCMAKE_TOOLCHAIN_FILE="D:/opt/vcpkg/scripts/buildsystems/vcpkg.cmake"`
+and set `-DCMAKE_TOOLCHAIN_FILE="~/opt/vcpkg/scripts/buildsystems/vcpkg.cmake"`
 and set `-DVCPKG_MANIFEST_INSTALL=OFF` if needed
 
 ### Repo init
@@ -80,14 +104,49 @@ vcpkg install
 - ncu --print-details=all --section SpeedOfLight_RooflineChart cuda_poc.exe
 
 - Test gtest (Admin):
-- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0101.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0101.HelloCuda
-- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0103.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0103.CompareInTypes
-- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0301.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0301.*
-- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0302.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0302.*
-- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0401.ncu-rep -- .\cmake-build-debug\test\test_day01.exe --gtest_filter=CudaPoc_Day0401.*
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0101.ncu-rep -- .\cmake-build-debug\test\test_day01.exe
+  --gtest_filter=CudaPoc_Day0101.HelloCuda
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0103.ncu-rep -- .\cmake-build-debug\test\test_day01.exe
+  --gtest_filter=CudaPoc_Day0103.CompareInTypes
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0301.ncu-rep -- .\cmake-build-debug\test\test_day01.exe
+  --gtest_filter=CudaPoc_Day0301.*
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0302.ncu-rep -- .\cmake-build-debug\test\test_day01.exe
+  --gtest_filter=CudaPoc_Day0302.*
+- ncu --nvtx --call-stack --set full -f --export CudaPoc_Day0401.ncu-rep -- .\cmake-build-debug\test\test_day01.exe
+  --gtest_filter=CudaPoc_Day0401.*
 
 - Test gtest cases (User):
 - .\cmake-build-debug\test\test_day01.exe
+
+- NSight System(nsys):
+- nsys profile -t cuda,nvtx,osrt -o stream -f true ./stream
+- nsys profile -t cuda,nvtx,osrt -o stream01 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.Stream01
+- nsys profile -t cuda,nvtx,osrt -o stream02 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.Stream02
+- nsys profile -t cuda,nvtx,osrt -o stream03 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.Stream03
+- nsys profile -t cuda,nvtx,osrt -o stream04 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.Stream04
+- nsys profile -t cuda,nvtx,osrt -o AllocateInStream01 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInStream01
+- nsys profile -t cuda,nvtx,osrt -o AllocateInStream02 -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInStream02
+- nsys profile -t cuda,nvtx,osrt -o AllocateInPinMem -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInPinMem
+- nsys profile -t cuda,nvtx,osrt -o AllocateInMangedMem -f true ./cmake-build-debug/test/test_day05cu --gtest_filter=CudaPoc_Day0502_Stream.AllocateInMangedMem
+
+then use Nsight system to open stream.nsys-rep
+
+
+-
+- Check topo structure among multiple GPUs:
+- nvidia-smi topo -m
+GPU0    CPU Affinity    NUMA Affinity   GPU NUMA ID
+GPU0     X                              N/A
+
+Legend:
+
+X    = Self
+SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+PIX  = Connection traversing at most a single PCIe bridge
+NV#  = Connection traversing a bonded set of # NVLinks
 
 ### Sample roofline chart:
 

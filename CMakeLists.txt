@@ -7,6 +7,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake_config.cmake)
 
 # Set CUDA path and architecture BEFORE project()
 set(CMAKE_CUDA_ARCHITECTURES ${TARGET_CUDA_ARCH})
+
 # Set C++ standard based on configuration
 set(CMAKE_CXX_STANDARD ${TARGET_CXX_STANDARD})
 
